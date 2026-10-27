@@ -363,16 +363,16 @@
      pixel-platformer vignette (sky, clouds, hills, brick ground) — not any
      existing game's character or block art — framed like a tiny game screen */
   .side-deco {
-    display: none; position: fixed; top: 0; bottom: 0; width: 250px;
+    display: none; position: fixed; top: 0; bottom: 0; width: 360px;
     pointer-events: none; z-index: 1; align-items: center; justify-content: center;
   }
   .side-deco-left { left: 0; }
   .side-deco-right { right: 0; }
-  @media (min-width: 1240px) {
+  @media (min-width: 1360px) {
     .side-deco { display: flex; }
   }
   .deco-scene {
-    position: relative; width: 220px; height: 300px; overflow: hidden;
+    position: relative; width: 330px; height: 300px; overflow: hidden;
     border: 3px solid var(--ink); border-radius: 2px;
     box-shadow: 0 4px 0 var(--shadow-strong);
     background: linear-gradient(180deg, #3aa8e8 0%, #6cc8f2 55%, #a7e3f7 100%);
@@ -380,19 +380,19 @@
 
   .deco-cloud { position: absolute; background: #fdfdfd; border-radius: 50%; opacity: .95; }
   .deco-cloud::before, .deco-cloud::after { content: ""; position: absolute; background: inherit; border-radius: inherit; }
-  .deco-cloud-1 { top: 20px; left: 18px; width: 62px; height: 25px; }
-  .deco-cloud-1::before { width: 28px; height: 28px; top: -15px; left: 6px; }
-  .deco-cloud-1::after { width: 21px; height: 21px; top: -11px; left: 32px; }
-  .deco-cloud-2 { top: 60px; right: 14px; width: 46px; height: 18px; }
-  .deco-cloud-2::before { width: 21px; height: 21px; top: -11px; left: 4px; }
-  .deco-cloud-2::after { width: 17px; height: 17px; top: -9px; left: 21px; }
+  .deco-cloud-1 { top: 20px; left: 27px; width: 93px; height: 25px; }
+  .deco-cloud-1::before { width: 42px; height: 42px; top: -22px; left: 9px; }
+  .deco-cloud-1::after { width: 31px; height: 31px; top: -16px; left: 48px; }
+  .deco-cloud-2 { top: 60px; right: 21px; width: 69px; height: 18px; }
+  .deco-cloud-2::before { width: 31px; height: 31px; top: -16px; left: 6px; }
+  .deco-cloud-2::after { width: 25px; height: 25px; top: -13px; left: 31px; }
 
   .deco-hill {
-    position: absolute; bottom: 34px; width: 170px; height: 64px;
+    position: absolute; bottom: 34px; width: 255px; height: 64px;
     background: #3f9e4c; border-radius: 50% 50% 0 0 / 100% 100% 0 0;
   }
-  .deco-hill-1 { left: -40px; background: #2f8a42; width: 150px; height: 56px; }
-  .deco-hill-2 { right: -46px; width: 120px; height: 44px; }
+  .deco-hill-1 { left: -60px; background: #2f8a42; width: 225px; height: 56px; }
+  .deco-hill-2 { right: -69px; width: 180px; height: 44px; }
 
   .deco-ground {
     position: absolute; left: 0; right: 0; bottom: 0; height: 32px;
