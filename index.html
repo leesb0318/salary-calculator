@@ -357,7 +357,62 @@
 
   @keyframes pop-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
   .card, .mascot-row { animation: pop-in .35s ease both; }
+
+  /* side-margin decoration: only shown once the viewport is wide enough that
+     real empty space sits beside the centered 600px column */
+  .side-deco {
+    display: none; position: fixed; top: 0; bottom: 0; width: 130px;
+    pointer-events: none; z-index: 1; align-items: center; justify-content: center;
+  }
+  .side-deco-left { left: 0; }
+  .side-deco-right { right: 0; }
+  @media (min-width: 960px) {
+    .side-deco { display: flex; }
+  }
+  .deco-scene { position: relative; width: 70px; height: 150px; }
+  .deco-ground { position: absolute; left: 6px; right: 6px; bottom: 26px; height: 3px; background: var(--border); }
+  .deco-player {
+    position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%);
+    font-size: 30px; line-height: 1;
+    animation: deco-jump 1.8s ease-in-out infinite;
+    filter: drop-shadow(0 4px 0 var(--shadow-strong));
+  }
+  .deco-coin {
+    position: absolute; left: 50%; top: 18px; transform: translateX(-50%);
+    font-size: 20px;
+    animation: deco-coin-pop 1.8s ease-in-out infinite;
+  }
+  .side-deco-right .deco-player, .side-deco-right .deco-coin { transform: translateX(-50%) scaleX(-1); }
+  .side-deco-right .deco-scene { animation-delay: .9s; }
+  .side-deco-right .deco-player, .side-deco-right .deco-coin { animation-delay: .9s; }
+
+  @keyframes deco-jump {
+    0%, 38% { bottom: 26px; }
+    50% { bottom: 96px; }
+    62%, 100% { bottom: 26px; }
+  }
+  @keyframes deco-coin-pop {
+    0%, 42% { opacity: 1; transform: translateX(-50%) scale(1) rotate(0deg); }
+    50% { opacity: 0; transform: translateX(-50%) scale(1.6) rotate(90deg); }
+    58%, 92% { opacity: 0; }
+    100% { opacity: 1; transform: translateX(-50%) scale(1) rotate(0deg); }
+  }
 </style>
+
+<div class="side-deco side-deco-left" aria-hidden="true">
+  <div class="deco-scene">
+    <span class="deco-coin">🪙</span>
+    <span class="deco-player">👾</span>
+    <div class="deco-ground"></div>
+  </div>
+</div>
+<div class="side-deco side-deco-right" aria-hidden="true">
+  <div class="deco-scene">
+    <span class="deco-coin">🪙</span>
+    <span class="deco-player">👾</span>
+    <div class="deco-ground"></div>
+  </div>
+</div>
 
 <div class="wrap">
   <header>
