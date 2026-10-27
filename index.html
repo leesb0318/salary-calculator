@@ -504,17 +504,26 @@
     </div>
   </div>
 
-  <div class="card">
-    <h2>고정비용</h2>
-    <div id="expenseList"></div>
-    <div class="quick-row">
-      <button type="button" id="addExpenseBtn">+ 항목 추가</button>
+  <div class="card settings-card">
+    <button type="button" class="settings-toggle" id="expenseToggle" aria-expanded="true" aria-controls="expenseBody">
+      <span>고정비용</span>
+      <span class="chev" id="expenseChev">▴ 접기</span>
+    </button>
+    <div class="collapse open" id="expenseBody">
+      <div class="collapse-inner">
+        <div class="collapse-pad">
+          <div id="expenseList"></div>
+          <div class="quick-row">
+            <button type="button" id="addExpenseBtn">+ 항목 추가</button>
+          </div>
+          <div class="expense-total">
+            <span>고정비용 합계</span>
+            <span class="value" id="expenseTotalValue"></span>
+          </div>
+          <p class="hint">월세, 통신비, 구독료처럼 매달 고정으로 나가는 돈을 넣으면 실수령액에서 자동으로 빼서 보여줘요. 금액은 위안(CNY) 기준으로 입력하세요.</p>
+        </div>
+      </div>
     </div>
-    <div class="expense-total">
-      <span>고정비용 합계</span>
-      <span class="value" id="expenseTotalValue"></span>
-    </div>
-    <p class="hint">월세, 통신비, 구독료처럼 매달 고정으로 나가는 돈을 넣으면 실수령액에서 자동으로 빼서 보여줘요. 금액은 위안(CNY) 기준으로 입력하세요.</p>
   </div>
 
   <div class="card">
@@ -761,6 +770,7 @@
   }
   wireCollapse('settingsToggle', 'settingsBody', 'settingsChev');
   wireCollapse('grossToggle', 'grossBody', 'grossChev');
+  wireCollapse('expenseToggle', 'expenseBody', 'expenseChev');
 
   const steps = [500, 1000, 2000, 3000];
   $('quickRow').innerHTML = steps.map(s => `<button type="button" data-step="${s}">+${s}</button>`).join('');
