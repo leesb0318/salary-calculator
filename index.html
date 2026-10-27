@@ -363,69 +363,89 @@
      pixel-platformer vignette (sky, clouds, hills, brick ground) — not any
      existing game's character or block art — framed like a tiny game screen */
   .side-deco {
-    display: none; position: fixed; top: 0; bottom: 0; width: 140px;
+    display: none; position: fixed; top: 0; bottom: 0; width: 190px;
     pointer-events: none; z-index: 1; align-items: center; justify-content: center;
   }
   .side-deco-left { left: 0; }
   .side-deco-right { right: 0; }
-  @media (min-width: 960px) {
+  @media (min-width: 1100px) {
     .side-deco { display: flex; }
   }
   .deco-scene {
-    position: relative; width: 112px; height: 224px; overflow: hidden;
+    position: relative; width: 156px; height: 312px; overflow: hidden;
     border: 3px solid var(--ink); border-radius: 2px;
     box-shadow: 0 4px 0 var(--shadow-strong);
     background: linear-gradient(180deg, #3aa8e8 0%, #6cc8f2 55%, #a7e3f7 100%);
   }
-  .side-deco-right .deco-scene { transform: scaleX(-1); animation-delay: .9s; }
 
   .deco-cloud { position: absolute; background: #fdfdfd; border-radius: 50%; opacity: .95; }
   .deco-cloud::before, .deco-cloud::after { content: ""; position: absolute; background: inherit; border-radius: inherit; }
-  .deco-cloud-1 { top: 16px; left: 10px; width: 32px; height: 13px; }
-  .deco-cloud-1::before { width: 15px; height: 15px; top: -8px; left: 3px; }
-  .deco-cloud-1::after { width: 11px; height: 11px; top: -6px; left: 17px; }
-  .deco-cloud-2 { top: 46px; right: 8px; width: 24px; height: 10px; }
-  .deco-cloud-2::before { width: 11px; height: 11px; top: -6px; left: 2px; }
-  .deco-cloud-2::after { width: 9px; height: 9px; top: -5px; left: 11px; }
+  .deco-cloud-1 { top: 20px; left: 14px; width: 44px; height: 18px; }
+  .deco-cloud-1::before { width: 20px; height: 20px; top: -11px; left: 4px; }
+  .deco-cloud-1::after { width: 15px; height: 15px; top: -8px; left: 23px; }
+  .deco-cloud-2 { top: 64px; right: 10px; width: 32px; height: 13px; }
+  .deco-cloud-2::before { width: 15px; height: 15px; top: -8px; left: 3px; }
+  .deco-cloud-2::after { width: 12px; height: 12px; top: -6px; left: 15px; }
 
   .deco-hill {
-    position: absolute; bottom: 30px; width: 90px; height: 46px;
+    position: absolute; bottom: 36px; width: 120px; height: 60px;
     background: #3f9e4c; border-radius: 50% 50% 0 0 / 100% 100% 0 0;
   }
-  .deco-hill-1 { left: -24px; background: #2f8a42; width: 80px; height: 40px; }
-  .deco-hill-2 { right: -28px; width: 64px; height: 32px; }
+  .deco-hill-1 { left: -30px; background: #2f8a42; width: 106px; height: 52px; }
+  .deco-hill-2 { right: -36px; width: 86px; height: 42px; }
 
   .deco-ground {
-    position: absolute; left: 0; right: 0; bottom: 0; height: 26px;
+    position: absolute; left: 0; right: 0; bottom: 0; height: 32px;
     background-color: #8a4a2b; border-top: 2px solid #5c2e16;
     background-image:
       linear-gradient(#a0623f 2px, transparent 2px),
       linear-gradient(90deg, #a0623f 2px, transparent 2px);
-    background-size: 16px 9px;
+    background-size: 18px 10px;
   }
 
+  /* left vignette: jumps straight up to grab a coin */
   .deco-player {
-    position: absolute; left: 50%; bottom: 30px; transform: translateX(-50%);
-    font-size: 26px; line-height: 1;
+    position: absolute; left: 50%; bottom: 36px; transform: translateX(-50%);
+    font-size: 32px; line-height: 1;
     animation: deco-jump 1.8s ease-in-out infinite;
     filter: drop-shadow(0 3px 0 rgba(0,0,0,.35));
   }
   .deco-coin {
-    position: absolute; left: 50%; top: 58px; transform: translateX(-50%);
-    font-size: 18px;
+    position: absolute; left: 50%; top: 76px; transform: translateX(-50%);
+    font-size: 22px;
     animation: deco-coin-pop 1.8s ease-in-out infinite;
   }
-
   @keyframes deco-jump {
-    0%, 38% { bottom: 30px; }
-    50% { bottom: 128px; }
-    62%, 100% { bottom: 30px; }
+    0%, 38% { bottom: 36px; }
+    50% { bottom: 178px; }
+    62%, 100% { bottom: 36px; }
   }
   @keyframes deco-coin-pop {
     0%, 42% { opacity: 1; transform: translateX(-50%) scale(1) rotate(0deg); }
     50% { opacity: 0; transform: translateX(-50%) scale(1.6) rotate(90deg); }
     58%, 92% { opacity: 0; }
     100% { opacity: 1; transform: translateX(-50%) scale(1) rotate(0deg); }
+  }
+
+  /* right vignette: a different rhythm — patrols left/right while two coins
+     twinkle on their own, independent of the walker */
+  .deco-walker {
+    position: absolute; bottom: 36px; left: 24%; font-size: 32px; line-height: 1;
+    animation: deco-walk 3.4s ease-in-out infinite;
+    filter: drop-shadow(0 3px 0 rgba(0,0,0,.35));
+  }
+  .deco-coin-a { top: 70px; left: 30%; font-size: 20px; animation: deco-coin-spin 1.3s ease-in-out infinite; }
+  .deco-coin-b { top: 118px; left: 68%; font-size: 20px; animation: deco-coin-spin 1.7s ease-in-out infinite .3s; }
+  @keyframes deco-walk {
+    0%   { left: 24%; transform: translateX(-50%) scaleX(1); }
+    47%  { left: 76%; transform: translateX(-50%) scaleX(1); }
+    50%  { left: 76%; transform: translateX(-50%) scaleX(-1); }
+    97%  { left: 24%; transform: translateX(-50%) scaleX(-1); }
+    100% { left: 24%; transform: translateX(-50%) scaleX(1); }
+  }
+  @keyframes deco-coin-spin {
+    0%, 100% { transform: translateX(-50%) rotateY(0deg) scale(1); }
+    50% { transform: translateX(-50%) rotateY(180deg) scale(1.15); }
   }
 </style>
 
@@ -446,8 +466,9 @@
     <div class="deco-cloud deco-cloud-2"></div>
     <div class="deco-hill deco-hill-1"></div>
     <div class="deco-hill deco-hill-2"></div>
-    <span class="deco-coin">🪙</span>
-    <span class="deco-player">👾</span>
+    <span class="deco-coin deco-coin-a">🪙</span>
+    <span class="deco-coin deco-coin-b">🪙</span>
+    <span class="deco-walker">👾</span>
     <div class="deco-ground"></div>
   </div>
 </div>
