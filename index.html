@@ -1,0 +1,593 @@
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>월급 실수령 계산기</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+  /*
+    layout: single centered column (max 600px) styled as an old handheld
+    console screen — scanline overlay on a near-black CRT background,
+    square-cornered panels with thick phosphor-green borders and a
+    chunky pixel "pop" shadow, an alien sprite + RPG dialogue box up
+    top, then an input panel, a collapsible settings tray, a before/after
+    table and reward-tile summary with an HP-bar style gauge
+  */
+  :root {
+    --bg: #090c09;
+    --surface: #10160f;
+    --surface-2: #161f14;
+    --border: #2b3a28;
+    --ink: #bdf2a0;
+    --shadow-strong: rgba(0, 0, 0, .75);
+    --fg: #d8f7c8;
+    --fg-dim: #86a878;
+    --fg-faint: #4d6245;
+    --accent: #39ff6e;
+    --accent-fg: #07130a;
+    --accent-soft: #15301d;
+    --positive: #39ff6e;
+    --positive-soft: #11291a;
+    --negative: #ff5050;
+    --negative-soft: #311414;
+    --warn: #ffd23f;
+    --warn-soft: #332a0c;
+    --gold: #ffd23f;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: "Noto Sans KR", system-ui, sans-serif;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 28px 56px;
+    position: relative;
+  }
+  body::after {
+    content: ""; position: fixed; inset: 0; z-index: 999; pointer-events: none;
+    background:
+      radial-gradient(ellipse at center, rgba(0,0,0,0) 45%, rgba(0,0,0,.5) 100%),
+      repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 1px, rgba(0,0,0,.14) 2px, rgba(0,0,0,.14) 3px);
+    mix-blend-mode: multiply;
+  }
+  .wrap { max-width: 600px; margin: 0 auto; position: relative; }
+
+  .f-display { font-family: "Black Han Sans", "Noto Sans KR", sans-serif; }
+  .f-pixel { font-family: "Press Start 2P", "Black Han Sans", "Noto Sans KR", sans-serif; }
+  .f-data { font-family: "VT323", "Noto Sans KR", monospace; font-variant-numeric: tabular-nums; }
+
+  header { margin-bottom: 16px; }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 10px; line-height: 1.6; letter-spacing: .02em;
+    color: var(--accent-fg); background: var(--accent);
+    border: 3px solid var(--ink); border-radius: 3px;
+    padding: 5px 10px; margin-bottom: 12px;
+  }
+  h1 {
+    font-size: clamp(22px, 7vw, 28px);
+    margin: 0 0 10px;
+    text-wrap: balance;
+    letter-spacing: .01em;
+    text-shadow: 0 0 10px var(--accent-soft);
+  }
+
+  .toggle-row {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .seg-toggle {
+    display: inline-flex; border: 3px solid var(--ink); border-radius: 3px;
+    background: var(--surface-2); padding: 3px; box-shadow: 0 4px 0 var(--shadow-strong);
+  }
+  .seg-toggle button {
+    font-size: 13px; font-weight: 700; border: none; border-radius: 2px;
+    padding: 7px 14px; cursor: pointer; background: transparent; color: var(--fg-dim);
+  }
+  .seg-toggle button.active { background: var(--accent); color: var(--accent-fg); }
+  .seg-toggle button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .currency-note { font-size: 11px; color: var(--fg-faint); }
+
+  .unit-tag {
+    display: inline-block; font-size: 10px; font-weight: 700;
+    padding: 3px 8px; border-radius: 2px; margin-left: 6px;
+    background: var(--accent-soft); color: var(--accent);
+    border: 2px solid var(--accent);
+    vertical-align: middle;
+  }
+
+  .mascot-row { display: flex; align-items: stretch; gap: 10px; margin-bottom: 18px; }
+  .mascot {
+    flex-shrink: 0; width: 54px; height: 54px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; background: var(--surface-2);
+    border: 3px solid var(--ink); border-radius: 3px;
+    box-shadow: 0 4px 0 var(--shadow-strong);
+    animation: idle 1.6s steps(2) infinite;
+  }
+  @keyframes idle { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+  .bubble {
+    position: relative; background: var(--surface);
+    border: 3px solid var(--ink); border-radius: 3px;
+    padding: 12px 14px; font-size: 13.5px; line-height: 1.6;
+    box-shadow: 0 4px 0 var(--shadow-strong);
+    flex: 1; min-width: 0; display: flex; align-items: center;
+  }
+  #bubbleText strong { color: var(--accent); }
+
+  .card {
+    background: var(--surface);
+    border: 3px solid var(--ink);
+    border-radius: 3px;
+    padding: 18px 18px 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 5px 0 var(--shadow-strong);
+  }
+  .card h2 {
+    font-family: "Black Han Sans", "Noto Sans KR", sans-serif;
+    font-size: 15px; font-weight: 400; letter-spacing: .01em;
+    color: var(--fg); margin: 0 0 14px;
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label {
+    display: block; font-size: 12.5px; font-weight: 700;
+    color: var(--fg-dim); margin-bottom: 6px;
+  }
+  .num-input {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--surface-2); border: 2px solid var(--border);
+    border-radius: 3px; padding: 8px 12px;
+  }
+  .num-input input {
+    flex: 1; min-width: 0; border: none; background: transparent;
+    color: var(--fg); font: 22px "VT323", monospace;
+    font-variant-numeric: tabular-nums; outline: none;
+  }
+  .num-input .unit {
+    color: var(--fg-dim); font-size: 11px; font-weight: 700; flex-shrink: 0;
+    background: var(--accent-soft); border-radius: 2px; padding: 3px 7px;
+  }
+  .num-input:focus-within { border-color: var(--accent); }
+
+  .quick-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .quick-row button {
+    font-family: "Press Start 2P", monospace; font-size: 11px;
+    background: var(--gold); color: #2a2100;
+    border: 3px solid var(--ink); border-radius: 2px;
+    padding: 8px 10px; cursor: pointer;
+    box-shadow: 0 3px 0 var(--shadow-strong);
+    transition: transform .08s ease;
+  }
+  .quick-row button:active { transform: translateY(3px); box-shadow: 0 0 0 var(--shadow-strong); }
+  .quick-row button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .quick-row button.active { background: var(--accent); color: var(--accent-fg); }
+
+  .settings-toggle {
+    width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    background: transparent; border: none; cursor: pointer; text-align: left;
+    font-family: "Black Han Sans", "Noto Sans KR", sans-serif; font-size: 15px; color: var(--fg);
+    padding: 16px 18px;
+  }
+  .settings-toggle .chev { font-family: "Noto Sans KR", sans-serif; font-size: 11px; font-weight: 700; color: var(--accent); }
+  .settings-card { padding: 0; }
+  .collapse { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .28s ease; }
+  .collapse.open { grid-template-rows: 1fr; }
+  .collapse-inner { overflow: hidden; min-height: 0; }
+  .collapse-pad { padding: 0 18px 20px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 420px) { .grid2 { grid-template-columns: 1fr; } }
+
+  .badge {
+    display: inline-block; font-size: 10px; font-weight: 700;
+    padding: 2px 8px; border-radius: 2px; margin-left: 4px;
+    background: var(--warn-soft); color: var(--warn);
+    border: 1.5px solid var(--warn);
+    vertical-align: middle;
+  }
+  .hint { font-size: 12px; color: var(--fg-faint); margin-top: 10px; line-height: 1.6; }
+
+  .row-scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th, td { padding: 9px 8px; text-align: right; }
+  th:first-child, td:first-child { text-align: left; }
+  thead th {
+    font-size: 11px; font-weight: 700; color: var(--fg-faint);
+    letter-spacing: .03em; border-bottom: 2px solid var(--border);
+  }
+  tbody tr:nth-child(even) { background: var(--surface-2); }
+  td { border-bottom: 1px solid var(--border); }
+  td.num, th.num { font-family: "VT323", monospace; font-size: 16px; font-variant-numeric: tabular-nums; }
+  tr.subtle td { color: var(--fg-dim); font-size: 12.5px; }
+  tr.subtle td.num { font-size: 14px; }
+  tr.total td { font-weight: 700; border-top: 3px solid var(--ink); border-bottom: none; background: var(--accent-soft) !important; }
+  tr.total td.num { font-size: 18px; color: var(--accent); }
+  td.diff-pos { color: var(--positive); font-weight: 700; }
+  td.diff-neg { color: var(--negative); font-weight: 700; }
+
+  .summary { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  @media (max-width: 420px) { .summary { grid-template-columns: 1fr; } }
+  .stat {
+    border: 3px solid var(--ink); border-radius: 3px; padding: 12px 14px;
+    box-shadow: 0 4px 0 var(--shadow-strong);
+  }
+  .stat .label { font-size: 11px; color: var(--fg-dim); margin-bottom: 4px; font-weight: 700; }
+  .stat .value { font-family: "VT323", monospace; font-size: 22px; font-variant-numeric: tabular-nums; }
+  .stat.pos { background: var(--positive-soft); }
+  .stat.pos .value { color: var(--positive); }
+  .stat.neg { background: var(--negative-soft); }
+  .stat.neg .value { color: var(--negative); }
+  .stat.acc { background: var(--accent-soft); }
+  .stat.acc .value { color: var(--accent); }
+  .stat.plain { background: var(--surface-2); }
+  .stat.full { grid-column: 1 / -1; }
+
+  .expense-row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+  .expense-row:last-child { margin-bottom: 0; }
+  .exp-label {
+    flex: 1; min-width: 0; background: var(--surface-2); border: 2px solid var(--border);
+    border-radius: 3px; padding: 8px 10px; color: var(--fg); font-size: 13px;
+    font-family: "Noto Sans KR", sans-serif; outline: none;
+  }
+  .exp-label:focus { border-color: var(--accent); }
+  .exp-amount-wrap { flex-shrink: 0; width: 150px; margin-top: 0; }
+  .exp-remove {
+    flex-shrink: 0; width: 36px; height: 36px; border: 2px solid var(--ink); border-radius: 3px;
+    background: var(--negative-soft); color: var(--negative); font-weight: 700; cursor: pointer;
+  }
+  .exp-remove:active { transform: translateY(1px); }
+  .expense-total {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-top: 12px; padding-top: 12px; border-top: 2px solid var(--border);
+    font-size: 13px; color: var(--fg-dim);
+  }
+  .expense-total .value { font-family: "VT323", monospace; font-size: 20px; color: var(--negative); }
+
+  .gauge-wrap { margin-top: 14px; }
+  .gauge-label {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 11px; font-weight: 700; color: var(--fg-dim); margin-bottom: 6px;
+  }
+  .gauge-label span:last-child { font-family: "VT323", monospace; color: var(--accent); font-size: 16px; }
+  .gauge {
+    height: 18px; border: 3px solid var(--ink); border-radius: 2px;
+    background: var(--surface-2); overflow: hidden; position: relative;
+  }
+  .gauge-fill {
+    height: 100%;
+    background: repeating-linear-gradient(45deg, var(--positive), var(--positive) 8px, #1f8a4a 8px, #1f8a4a 16px);
+    transition: width .35s ease;
+  }
+
+  footer { margin-top: 18px; font-size: 11.5px; color: var(--fg-faint); line-height: 1.7; text-align: center; }
+
+  @keyframes pop-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .card, .mascot-row { animation: pop-in .35s ease both; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow f-pixel">🕹️ CNY 분할급여 전용</div>
+    <h1 class="f-display">월급 실수령 계산기</h1>
+  </header>
+
+  <div class="toggle-row">
+    <div class="seg-toggle" id="currencyToggle" role="group" aria-label="표시 통화">
+      <button type="button" class="f-display" data-currency="CNY">🪙 위안</button>
+      <button type="button" class="f-display active" data-currency="KRW">💴 원</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>💱 환율</h2>
+    <div class="field">
+      <label for="fx">CNY → KRW 환율 (직접 입력 또는 아래에서 선택)</label>
+      <div class="num-input">
+        <input id="fx" type="number" inputmode="decimal" value="190" step="1">
+        <span class="unit">원/위안</span>
+      </div>
+      <div class="quick-row" id="fxPresetRow"></div>
+    </div>
+  </div>
+
+  <div class="mascot-row">
+    <div class="mascot">👾</div>
+    <div class="bubble"><span id="bubbleText">숫자를 넣으면 삐빅! 계산해줄게요.</span></div>
+  </div>
+
+  <div class="card">
+    <h2>💵 월급</h2>
+    <div class="field">
+      <label for="grossNow">현재 세전 월급</label>
+      <div class="num-input">
+        <input id="grossNow" type="number" inputmode="decimal" value="16000" step="100">
+        <span class="unit">🪙 위안</span>
+      </div>
+    </div>
+    <div class="field">
+      <label for="grossAfter">인상 후 세전 월급</label>
+      <div class="num-input">
+        <input id="grossAfter" type="number" inputmode="decimal" value="18000" step="100">
+        <span class="unit">🪙 위안</span>
+      </div>
+      <div class="quick-row" id="quickRow"></div>
+    </div>
+  </div>
+
+  <div class="card settings-card">
+    <button type="button" class="settings-toggle" id="settingsToggle" aria-expanded="false" aria-controls="settingsBody">
+      <span>⚙️ 지급 구조 설정</span>
+      <span class="chev" id="settingsChev">▾ 펼치기</span>
+    </button>
+    <div class="collapse" id="settingsBody">
+      <div class="collapse-inner">
+        <div class="collapse-pad">
+          <div class="grid2">
+            <div class="field">
+              <label for="base1">1차 고정 지급액</label>
+              <div class="num-input">
+                <input id="base1" type="number" inputmode="decimal" value="10000" step="100">
+                <span class="unit">위안</span>
+              </div>
+            </div>
+            <div class="field">
+              <label for="insRate">사회보험 공제율</label>
+              <div class="num-input">
+                <input id="insRate" type="number" inputmode="decimal" value="11.685" step="0.001">
+                <span class="unit">%</span>
+              </div>
+            </div>
+            <div class="field">
+              <label for="feeRate">플랫폼 수수료율</label>
+              <div class="num-input">
+                <input id="feeRate" type="number" inputmode="decimal" value="5" step="0.1">
+                <span class="unit">%</span>
+              </div>
+            </div>
+            <div class="field">
+              <label for="tax">개인소득세(월)<span class="badge">미확인</span></label>
+              <div class="num-input">
+                <input id="tax" type="number" inputmode="decimal" value="0" step="10">
+                <span class="unit">위안</span>
+              </div>
+            </div>
+          </div>
+          <p class="hint">사회보험 공제율은 "10000위안 → 8831.5위안" 실수령 내역으로 역산한 값(1168.5÷10000)이에요. 실제 공제 기준이 확인되면 수정하세요. 개인소득세는 아직 확인 전이라 기본값 0이에요.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📌 고정비용</h2>
+    <div id="expenseList"></div>
+    <div class="quick-row">
+      <button type="button" id="addExpenseBtn">+ 항목 추가</button>
+    </div>
+    <div class="expense-total">
+      <span>고정비용 합계</span>
+      <span class="value" id="expenseTotalValue"></span>
+    </div>
+    <p class="hint">월세, 통신비, 구독료처럼 매달 고정으로 나가는 돈을 넣으면 실수령액에서 자동으로 빼서 보여줘요. 금액은 위안(CNY) 기준으로 입력하세요.</p>
+  </div>
+
+  <div class="card">
+    <h2>📊 비교표<span class="unit-tag" id="tableUnitTag"></span></h2>
+    <div class="row-scroll">
+      <table id="table">
+        <thead>
+          <tr><th>항목</th><th class="num">지금</th><th class="num">인상 후</th><th class="num">차액</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🏆 요약<span class="unit-tag" id="summaryUnitTag"></span></h2>
+    <div class="summary" id="summary"></div>
+    <div class="gauge-wrap">
+      <div class="gauge-label"><span>실수령 반영률</span><span id="gaugePct">0%</span></div>
+      <div class="gauge"><div class="gauge-fill" id="gaugeFill" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <footer>
+    세전 월급은 1차(고정 <strong id="fBase1">10,000</strong>위안, 사회보험 공제 후 지급)와 2차(나머지 전액, 플랫폼 수수료 공제 후 지급)로 나뉜다고 가정해요. 인상분은 전부 2차에 더해져요 — 회사 정책이 바뀌면 설정값을 고쳐서 다시 계산해요.
+  </footer>
+</div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const fmt = (n) => Math.round(n).toLocaleString('ko-KR');
+  const fmtSigned = (n) => (n > 0 ? '+' : n < 0 ? '−' : '') + Math.abs(Math.round(n)).toLocaleString('ko-KR');
+
+  let currency = 'KRW';
+  let expenses = [
+    { id: 1, label: '월세', amount: 0 },
+    { id: 2, label: '통신비', amount: 0 },
+  ];
+  let nextExpenseId = 3;
+
+  function renderExpenses() {
+    $('expenseList').innerHTML = expenses.map(exp => `
+      <div class="expense-row" data-id="${exp.id}">
+        <input type="text" class="exp-label" value="${exp.label}" placeholder="항목명">
+        <div class="num-input exp-amount-wrap">
+          <input type="number" class="exp-amount" value="${exp.amount}" step="10">
+          <span class="unit">위안</span>
+        </div>
+        <button type="button" class="exp-remove" aria-label="삭제">✕</button>
+      </div>
+    `).join('');
+  }
+
+  function calc(gross, base1, insRate, feeRate, tax) {
+    const pay1Gross = Math.min(base1, Math.max(gross, 0));
+    const insurance = pay1Gross * insRate;
+    const pay1Net = pay1Gross - insurance;
+    const pay2Gross = Math.max(gross - base1, 0);
+    const fee = pay2Gross * feeRate;
+    const pay2Net = pay2Gross - fee;
+    const totalNet = pay1Net + pay2Net - tax;
+    return { gross, pay1Gross, insurance, pay1Net, pay2Gross, fee, pay2Net, tax, totalNet };
+  }
+
+  function readInputs() {
+    return {
+      grossNow: parseFloat($('grossNow').value) || 0,
+      grossAfter: parseFloat($('grossAfter').value) || 0,
+      base1: parseFloat($('base1').value) || 0,
+      insRate: (parseFloat($('insRate').value) || 0) / 100,
+      feeRate: (parseFloat($('feeRate').value) || 0) / 100,
+      tax: parseFloat($('tax').value) || 0,
+      fx: parseFloat($('fx').value) || 0,
+    };
+  }
+
+  function row(label, now, after, opts = {}) {
+    const diff = after - now;
+    const diffClass = opts.invert
+      ? (diff > 0 ? 'diff-neg' : diff < 0 ? 'diff-pos' : '')
+      : (diff > 0 ? 'diff-pos' : diff < 0 ? 'diff-neg' : '');
+    const cls = opts.subtle ? ' class="subtle"' : opts.total ? ' class="total"' : '';
+    return `<tr${cls}>
+      <td>${label}</td>
+      <td class="num">${fmt(now)}</td>
+      <td class="num">${fmt(after)}</td>
+      <td class="num ${diffClass}">${fmtSigned(diff)}</td>
+    </tr>`;
+  }
+
+  function render() {
+    const v = readInputs();
+    const now = calc(v.grossNow, v.base1, v.insRate, v.feeRate, v.tax);
+    const after = calc(v.grossAfter, v.base1, v.insRate, v.feeRate, v.tax);
+
+    $('fBase1').textContent = fmt(v.base1);
+
+    const isKrw = currency === 'KRW' && v.fx > 0;
+    const factor = isKrw ? v.fx : 1;
+    const unit = isKrw ? '원' : '위안';
+    const c = (n) => n * factor;
+
+    document.querySelectorAll('#currencyToggle button').forEach(b => {
+      b.classList.toggle('active', b.dataset.currency === currency);
+    });
+    document.querySelectorAll('#fxPresetRow button').forEach(b => {
+      b.classList.toggle('active', Number(b.dataset.fx) === v.fx);
+    });
+    $('tableUnitTag').textContent = isKrw ? '💴 원 기준' : '🪙 위안 기준';
+    $('summaryUnitTag').textContent = isKrw ? '💴 원 기준' : '🪙 위안 기준';
+
+    let rows = '';
+    rows += row('세전 월급', c(now.gross), c(after.gross));
+    rows += row('1차 세전 (고정)', c(now.pay1Gross), c(after.pay1Gross), { subtle: true });
+    rows += row('　사회보험 공제', c(now.insurance), c(after.insurance), { subtle: true, invert: true });
+    rows += row('1차 실수령', c(now.pay1Net), c(after.pay1Net));
+    rows += row('2차 세전', c(now.pay2Gross), c(after.pay2Gross), { subtle: true });
+    rows += row('　플랫폼 수수료', c(now.fee), c(after.fee), { subtle: true, invert: true });
+    rows += row('2차 실수령', c(now.pay2Net), c(after.pay2Net));
+    if (now.tax > 0 || after.tax > 0) {
+      rows += row('개인소득세', c(now.tax), c(after.tax), { subtle: true, invert: true });
+    }
+    rows += row('총 실수령액', c(now.totalNet), c(after.totalNet), { total: true });
+    const totalExpenses = expenses.reduce((s, x) => s + (parseFloat(x.amount) || 0), 0);
+    if (totalExpenses > 0) {
+      rows += row('　고정비용', c(totalExpenses), c(totalExpenses), { subtle: true, invert: true });
+      rows += row('고정비용 차감 후', c(now.totalNet - totalExpenses), c(after.totalNet - totalExpenses), { total: true });
+    }
+    $('table').querySelector('tbody').innerHTML = rows;
+    $('expenseTotalValue').textContent = `${fmt(c(totalExpenses))} ${unit}`;
+
+    const raiseGross = after.gross - now.gross;
+    const raiseNet = after.totalNet - now.totalNet;
+    const lost = raiseGross - raiseNet;
+    const pct = raiseGross !== 0 ? Math.max(0, Math.min(100, (raiseNet / raiseGross) * 100)) : 0;
+
+    $('summary').innerHTML = `
+      <div class="stat plain"><div class="label">세전 인상액</div><div class="value">${fmtSigned(c(raiseGross))} ${unit}</div></div>
+      <div class="stat pos"><div class="label">✨ 실제로 더 받는 돈</div><div class="value">${fmtSigned(c(raiseNet))} ${unit}</div></div>
+      <div class="stat neg"><div class="label">💨 수수료로 증발한 돈</div><div class="value">${fmtSigned(c(lost))} ${unit}</div></div>
+      <div class="stat acc"><div class="label">📅 연 환산 실수령</div><div class="value">${fmt(c(after.totalNet * 12))} ${unit}</div></div>
+      ${totalExpenses > 0 ? `<div class="stat pos full"><div class="label">💰 고정비용 차감 후 (인상 후 기준)</div><div class="value">${fmt(c(after.totalNet - totalExpenses))} ${unit}</div></div>` : ''}
+    `;
+
+    $('gaugeFill').style.width = (raiseGross ? pct : 0).toFixed(1) + '%';
+    $('gaugePct').textContent = (raiseGross ? pct : 0).toFixed(1) + '%';
+
+    if (raiseGross === 0) {
+      $('bubbleText').innerHTML = '숫자를 넣으면 삐빅! 계산해줄게요.';
+    } else if (raiseNet >= 0) {
+      $('bubbleText').innerHTML = `삐빅! 인상분 중 <strong>${fmtSigned(c(raiseNet))}${unit}</strong>이 진짜 내 손에 들어와요. (반영률 ${pct.toFixed(1)}%)`;
+    } else {
+      $('bubbleText').innerHTML = `경고! 실수령액이 오히려 <strong>${fmtSigned(Math.abs(c(raiseNet)))}${unit}</strong> 줄어들어요.`;
+    }
+  }
+
+  $('currencyToggle').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-currency]');
+    if (!btn) return;
+    currency = btn.dataset.currency;
+    render();
+  });
+
+  const settingsToggle = $('settingsToggle');
+  const settingsBody = $('settingsBody');
+  settingsToggle.addEventListener('click', () => {
+    const open = settingsBody.classList.toggle('open');
+    settingsToggle.setAttribute('aria-expanded', String(open));
+    $('settingsChev').textContent = open ? '▴ 접기' : '▾ 펼치기';
+  });
+
+  const steps = [500, 1000, 2000, 3000];
+  $('quickRow').innerHTML = steps.map(s => `<button type="button" data-step="${s}">+${s}</button>`).join('');
+  $('quickRow').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-step]');
+    if (!btn) return;
+    const base = parseFloat($('grossNow').value) || 0;
+    $('grossAfter').value = base + parseFloat(btn.dataset.step);
+    render();
+  });
+
+  const fxPresets = [190, 195, 200, 205, 210, 215, 220, 225, 230];
+  $('fxPresetRow').innerHTML = fxPresets.map(r => `<button type="button" data-fx="${r}">${r}원</button>`).join('');
+  $('fxPresetRow').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-fx]');
+    if (!btn) return;
+    $('fx').value = btn.dataset.fx;
+    render();
+  });
+
+  $('expenseList').addEventListener('input', (e) => {
+    const r = e.target.closest('.expense-row');
+    if (!r) return;
+    const exp = expenses.find(x => x.id === Number(r.dataset.id));
+    if (!exp) return;
+    if (e.target.classList.contains('exp-label')) exp.label = e.target.value;
+    if (e.target.classList.contains('exp-amount')) exp.amount = parseFloat(e.target.value) || 0;
+    render();
+  });
+  $('expenseList').addEventListener('click', (e) => {
+    const btn = e.target.closest('.exp-remove');
+    if (!btn) return;
+    const r = btn.closest('.expense-row');
+    expenses = expenses.filter(x => x.id !== Number(r.dataset.id));
+    renderExpenses();
+    render();
+  });
+  $('addExpenseBtn').addEventListener('click', () => {
+    expenses.push({ id: nextExpenseId++, label: '', amount: 0 });
+    renderExpenses();
+    render();
+  });
+
+  document.querySelectorAll('input').forEach(el => el.addEventListener('input', render));
+  renderExpenses();
+  render();
+</script>
