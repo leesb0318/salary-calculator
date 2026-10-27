@@ -359,9 +359,11 @@
   .card, .mascot-row { animation: pop-in .35s ease both; }
 
   /* side-margin decoration: only shown once the viewport is wide enough that
-     real empty space sits beside the centered 600px column */
+     real empty space sits beside the centered 600px column. An original
+     pixel-platformer vignette (sky, clouds, hills, brick ground) — not any
+     existing game's character or block art — framed like a tiny game screen */
   .side-deco {
-    display: none; position: fixed; top: 0; bottom: 0; width: 130px;
+    display: none; position: fixed; top: 0; bottom: 0; width: 140px;
     pointer-events: none; z-index: 1; align-items: center; justify-content: center;
   }
   .side-deco-left { left: 0; }
@@ -369,27 +371,55 @@
   @media (min-width: 960px) {
     .side-deco { display: flex; }
   }
-  .deco-scene { position: relative; width: 70px; height: 150px; }
-  .deco-ground { position: absolute; left: 6px; right: 6px; bottom: 26px; height: 3px; background: var(--border); }
+  .deco-scene {
+    position: relative; width: 112px; height: 224px; overflow: hidden;
+    border: 3px solid var(--ink); border-radius: 2px;
+    box-shadow: 0 4px 0 var(--shadow-strong);
+    background: linear-gradient(180deg, #3aa8e8 0%, #6cc8f2 55%, #a7e3f7 100%);
+  }
+  .side-deco-right .deco-scene { transform: scaleX(-1); animation-delay: .9s; }
+
+  .deco-cloud { position: absolute; background: #fdfdfd; border-radius: 50%; opacity: .95; }
+  .deco-cloud::before, .deco-cloud::after { content: ""; position: absolute; background: inherit; border-radius: inherit; }
+  .deco-cloud-1 { top: 16px; left: 10px; width: 32px; height: 13px; }
+  .deco-cloud-1::before { width: 15px; height: 15px; top: -8px; left: 3px; }
+  .deco-cloud-1::after { width: 11px; height: 11px; top: -6px; left: 17px; }
+  .deco-cloud-2 { top: 46px; right: 8px; width: 24px; height: 10px; }
+  .deco-cloud-2::before { width: 11px; height: 11px; top: -6px; left: 2px; }
+  .deco-cloud-2::after { width: 9px; height: 9px; top: -5px; left: 11px; }
+
+  .deco-hill {
+    position: absolute; bottom: 30px; width: 90px; height: 46px;
+    background: #3f9e4c; border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+  }
+  .deco-hill-1 { left: -24px; background: #2f8a42; width: 80px; height: 40px; }
+  .deco-hill-2 { right: -28px; width: 64px; height: 32px; }
+
+  .deco-ground {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 26px;
+    background-color: #8a4a2b; border-top: 2px solid #5c2e16;
+    background-image:
+      linear-gradient(#a0623f 2px, transparent 2px),
+      linear-gradient(90deg, #a0623f 2px, transparent 2px);
+    background-size: 16px 9px;
+  }
+
   .deco-player {
-    position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%);
-    font-size: 30px; line-height: 1;
+    position: absolute; left: 50%; bottom: 30px; transform: translateX(-50%);
+    font-size: 26px; line-height: 1;
     animation: deco-jump 1.8s ease-in-out infinite;
-    filter: drop-shadow(0 4px 0 var(--shadow-strong));
+    filter: drop-shadow(0 3px 0 rgba(0,0,0,.35));
   }
   .deco-coin {
-    position: absolute; left: 50%; top: 18px; transform: translateX(-50%);
-    font-size: 20px;
+    position: absolute; left: 50%; top: 58px; transform: translateX(-50%);
+    font-size: 18px;
     animation: deco-coin-pop 1.8s ease-in-out infinite;
   }
-  .side-deco-right .deco-player, .side-deco-right .deco-coin { transform: translateX(-50%) scaleX(-1); }
-  .side-deco-right .deco-scene { animation-delay: .9s; }
-  .side-deco-right .deco-player, .side-deco-right .deco-coin { animation-delay: .9s; }
 
   @keyframes deco-jump {
-    0%, 38% { bottom: 26px; }
-    50% { bottom: 96px; }
-    62%, 100% { bottom: 26px; }
+    0%, 38% { bottom: 30px; }
+    50% { bottom: 128px; }
+    62%, 100% { bottom: 30px; }
   }
   @keyframes deco-coin-pop {
     0%, 42% { opacity: 1; transform: translateX(-50%) scale(1) rotate(0deg); }
@@ -401,6 +431,10 @@
 
 <div class="side-deco side-deco-left" aria-hidden="true">
   <div class="deco-scene">
+    <div class="deco-cloud deco-cloud-1"></div>
+    <div class="deco-cloud deco-cloud-2"></div>
+    <div class="deco-hill deco-hill-1"></div>
+    <div class="deco-hill deco-hill-2"></div>
     <span class="deco-coin">🪙</span>
     <span class="deco-player">👾</span>
     <div class="deco-ground"></div>
@@ -408,6 +442,10 @@
 </div>
 <div class="side-deco side-deco-right" aria-hidden="true">
   <div class="deco-scene">
+    <div class="deco-cloud deco-cloud-1"></div>
+    <div class="deco-cloud deco-cloud-2"></div>
+    <div class="deco-hill deco-hill-1"></div>
+    <div class="deco-hill deco-hill-2"></div>
     <span class="deco-coin">🪙</span>
     <span class="deco-player">👾</span>
     <div class="deco-ground"></div>
