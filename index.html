@@ -154,6 +154,7 @@
     background: var(--accent-soft); border-radius: 2px; padding: 3px 7px;
   }
   .num-input:focus-within { border-color: var(--accent); }
+  .num-input input[type="date"] { font-family: "Noto Sans KR", sans-serif; font-size: 15px; }
 
   .quick-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
   .quick-row button {
@@ -292,6 +293,32 @@
     font-size: 13px; color: var(--fg-dim);
   }
   .expense-total .value { font-family: "VT323", monospace; font-size: 20px; color: var(--negative); }
+
+  .log-preview {
+    margin-top: 14px; padding: 12px 14px; border: 2px dashed var(--border);
+    border-radius: 3px; font-size: 13px; color: var(--fg-dim);
+  }
+  .log-preview strong { color: var(--accent); font-family: "VT323", monospace; font-size: 18px; }
+  .log-field { color-scheme: dark; }
+
+  .month-group { margin-top: 20px; }
+  .month-head {
+    display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 6px;
+    font-family: "Black Han Sans", "Noto Sans KR", sans-serif; font-size: 14px; color: var(--fg);
+    padding-bottom: 8px; margin-bottom: 8px; border-bottom: 2px solid var(--border);
+  }
+  .month-head .total { font-family: "VT323", monospace; font-size: 17px; color: var(--accent); }
+  .log-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .log-table th, .log-table td { padding: 7px 6px; text-align: right; border-bottom: 1px solid var(--border); }
+  .log-table th:first-child, .log-table td:first-child { text-align: left; }
+  .log-table thead th { font-size: 10.5px; color: var(--fg-faint); font-weight: 700; }
+  .log-table td.num, .log-table th.num { font-family: "VT323", monospace; font-size: 15px; }
+  .log-del {
+    width: 26px; height: 26px; border: 2px solid var(--ink); border-radius: 2px;
+    background: var(--negative-soft); color: var(--negative); font-weight: 700; cursor: pointer; font-size: 11px;
+  }
+  .log-del:active { transform: translateY(1px); }
+  .log-empty { font-size: 13px; color: var(--fg-faint); padding: 14px 0; text-align: center; }
 
   .gauge-wrap { margin-top: 14px; }
   .gauge-label {
@@ -485,6 +512,58 @@
     </div>
   </div>
 
+  <div class="card">
+    <h2>지급 기록</h2>
+    <div class="grid2">
+      <div class="field">
+        <label for="logDate">날짜</label>
+        <div class="num-input">
+          <input id="logDate" class="log-field" type="date">
+        </div>
+      </div>
+      <div class="field">
+        <label>구분</label>
+        <div class="seg-toggle" id="logLeg" role="group" aria-label="지급 구분">
+          <button type="button" class="f-display active" data-leg="1차">1차</button>
+          <button type="button" class="f-display" data-leg="2차">2차</button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="logGross">세전 지급액</label>
+        <div class="num-input">
+          <input id="logGross" class="log-field" type="number" inputmode="decimal" value="10000" step="100">
+          <span class="unit">위안</span>
+        </div>
+      </div>
+      <div class="field">
+        <label for="logRate">적용 공제·수수료율</label>
+        <div class="num-input">
+          <input id="logRate" class="log-field" type="number" inputmode="decimal" value="11.685" step="0.001">
+          <span class="unit">%</span>
+        </div>
+      </div>
+    </div>
+    <div class="field">
+      <label for="logFx">그날 환율</label>
+      <div class="num-input">
+        <input id="logFx" class="log-field" type="number" inputmode="decimal" value="190" step="0.1">
+        <span class="unit">원/위안</span>
+      </div>
+      <button type="button" class="fetch-btn" id="logFetchFx">실시간 환율 불러오기</button>
+    </div>
+    <div class="log-preview" id="logPreview"></div>
+    <button type="button" class="fetch-btn" id="saveLogBtn">이 기록 저장하기</button>
+
+    <div id="logHistory"></div>
+
+    <div class="quick-row">
+      <button type="button" id="exportLogBtn">내보내기(JSON)</button>
+      <button type="button" id="importLogBtn">가져오기</button>
+    </div>
+    <input type="file" id="importLogFile" accept="application/json" hidden>
+    <p class="hint" id="logImportStatus">기록은 이 브라우저에만 저장돼요(localStorage). 다른 기기로 옮기려면 내보내기/가져오기를 쓰세요.</p>
+  </div>
+
   <footer>
     세전 월급은 1차(고정액, 사회보험 공제 후 지급)와 2차(나머지 전액, 플랫폼 수수료 공제 후 지급)로 나뉜다고 가정해요. "지급 구조 설정"에서 지금/인상 후 구조를 따로 입력할 수 있어요.
   </footer>
@@ -662,6 +741,18 @@
     render();
   });
 
+  async function fetchRate() {
+    const res = await fetch('https://open.er-api.com/v6/latest/CNY');
+    if (!res.ok) throw new Error('network');
+    const data = await res.json();
+    const rate = data && data.rates && data.rates.KRW;
+    if (!rate) throw new Error('no-rate');
+    return {
+      rate: Math.round(rate * 100) / 100,
+      time: data.time_last_update_utc ? new Date(data.time_last_update_utc) : new Date(),
+    };
+  }
+
   async function fetchLiveRate() {
     const btn = $('fetchFxBtn');
     const status = $('fxStatus');
@@ -670,14 +761,8 @@
     btn.textContent = '불러오는 중...';
     status.textContent = '환율 불러오는 중...';
     try {
-      const res = await fetch('https://open.er-api.com/v6/latest/CNY');
-      if (!res.ok) throw new Error('network');
-      const data = await res.json();
-      const rate = data && data.rates && data.rates.KRW;
-      if (!rate) throw new Error('no-rate');
-      const rounded = Math.round(rate * 100) / 100;
+      const { rate: rounded, time: updated } = await fetchRate();
       $('fx').value = rounded;
-      const updated = data.time_last_update_utc ? new Date(data.time_last_update_utc) : new Date();
       status.textContent = `${rounded}원/위안 · ${updated.toLocaleString('ko-KR')} 기준 (자동 조회)`;
       render();
     } catch (err) {
@@ -688,6 +773,158 @@
     }
   }
   $('fetchFxBtn').addEventListener('click', fetchLiveRate);
+
+  let logRecords = [];
+  try { logRecords = JSON.parse(localStorage.getItem('salaryCalcLog') || '[]'); } catch (e) { logRecords = []; }
+  let currentLeg = '1차';
+
+  function saveLogToStorage() {
+    try { localStorage.setItem('salaryCalcLog', JSON.stringify(logRecords)); } catch (e) {}
+  }
+
+  function applyLegDefaults() {
+    if (currentLeg === '1차') {
+      $('logGross').value = $('base1Now').value;
+      $('logRate').value = $('insRateNow').value;
+    } else {
+      const g = (parseFloat($('grossNow').value) || 0) - (parseFloat($('base1Now').value) || 0);
+      $('logGross').value = Math.max(g, 0);
+      $('logRate').value = $('feeRateNow').value;
+    }
+    updateLogPreview();
+  }
+
+  function updateLogPreview() {
+    const gross = parseFloat($('logGross').value) || 0;
+    const rate = parseFloat($('logRate').value) || 0;
+    const fx = parseFloat($('logFx').value) || 0;
+    const netCNY = gross * (1 - rate / 100);
+    const netKRW = netCNY * fx;
+    $('logPreview').innerHTML = `${currentLeg} 세후 실수령 예상: <strong>${fmt(netCNY)}위안</strong> · 원화 환산 <strong>${fmt(netKRW)}원</strong>`;
+  }
+
+  function renderLog() {
+    const container = $('logHistory');
+    if (logRecords.length === 0) {
+      container.innerHTML = '<p class="log-empty">아직 저장된 기록이 없어요. 위에서 입력하고 저장해보세요.</p>';
+      return;
+    }
+    const groups = {};
+    logRecords.forEach(r => {
+      const month = (r.date || '').slice(0, 7) || '날짜 없음';
+      (groups[month] = groups[month] || []).push(r);
+    });
+    const months = Object.keys(groups).sort().reverse();
+    container.innerHTML = months.map(month => {
+      const recs = groups[month].slice().sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+      const totalNetCNY = recs.reduce((s, r) => s + r.netCNY, 0);
+      const totalNetKRW = recs.reduce((s, r) => s + r.netKRW, 0);
+      const rows = recs.map(r => `
+        <tr>
+          <td>${r.date || '-'}</td>
+          <td>${r.leg}</td>
+          <td class="num">${fmt(r.gross)}</td>
+          <td class="num">${r.rate}%</td>
+          <td class="num">${fmt(r.fx)}</td>
+          <td class="num">${fmt(r.netCNY)}</td>
+          <td class="num">${fmt(r.netKRW)}</td>
+          <td><button type="button" class="log-del" data-id="${r.id}">✕</button></td>
+        </tr>`).join('');
+      return `
+        <div class="month-group">
+          <div class="month-head"><span>${month}</span><span class="total">${fmt(totalNetCNY)}위안 · ${fmt(totalNetKRW)}원</span></div>
+          <div class="row-scroll">
+            <table class="log-table">
+              <thead><tr><th>날짜</th><th>구분</th><th class="num">세전</th><th class="num">비율</th><th class="num">환율</th><th class="num">세후(위안)</th><th class="num">환산(원)</th><th></th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        </div>`;
+    }).join('');
+    container.querySelectorAll('.log-del').forEach(btn => {
+      btn.addEventListener('click', () => {
+        logRecords = logRecords.filter(r => r.id !== Number(btn.dataset.id));
+        saveLogToStorage();
+        renderLog();
+      });
+    });
+  }
+
+  $('logLeg').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-leg]');
+    if (!btn) return;
+    currentLeg = btn.dataset.leg;
+    document.querySelectorAll('#logLeg button').forEach(b => b.classList.toggle('active', b === btn));
+    applyLegDefaults();
+  });
+
+  document.querySelectorAll('.log-field').forEach(el => el.addEventListener('input', updateLogPreview));
+
+  $('logFetchFx').addEventListener('click', async () => {
+    const btn = $('logFetchFx');
+    btn.disabled = true;
+    const prevLabel = btn.textContent;
+    btn.textContent = '불러오는 중...';
+    try {
+      const { rate } = await fetchRate();
+      $('logFx').value = rate;
+      updateLogPreview();
+    } catch (err) {
+      // keep manual value; main fx status already explains failures
+    } finally {
+      btn.disabled = false;
+      btn.textContent = prevLabel;
+    }
+  });
+
+  $('saveLogBtn').addEventListener('click', () => {
+    const gross = parseFloat($('logGross').value) || 0;
+    const rate = parseFloat($('logRate').value) || 0;
+    const fx = parseFloat($('logFx').value) || 0;
+    const date = $('logDate').value || new Date().toISOString().slice(0, 10);
+    const netCNY = gross * (1 - rate / 100);
+    const netKRW = netCNY * fx;
+    logRecords.push({ id: Date.now(), date, leg: currentLeg, gross, rate, fx, netCNY, netKRW });
+    saveLogToStorage();
+    renderLog();
+  });
+
+  $('exportLogBtn').addEventListener('click', () => {
+    const blob = new Blob([JSON.stringify(logRecords, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'salary-log.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  $('importLogBtn').addEventListener('click', () => $('importLogFile').click());
+  $('importLogFile').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const imported = JSON.parse(reader.result);
+        if (!Array.isArray(imported)) throw new Error('invalid');
+        const existingIds = new Set(logRecords.map(r => r.id));
+        let added = 0;
+        imported.forEach(r => { if (r && !existingIds.has(r.id)) { logRecords.push(r); added++; } });
+        saveLogToStorage();
+        renderLog();
+        $('logImportStatus').textContent = `${added}건 가져왔어요. 기록은 이 브라우저에만 저장돼요(localStorage).`;
+      } catch (err) {
+        $('logImportStatus').textContent = '파일을 읽지 못했어요. 올바른 JSON 파일인지 확인해주세요.';
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+
+  $('logDate').value = new Date().toISOString().slice(0, 10);
 
   $('expenseList').addEventListener('input', (e) => {
     const r = e.target.closest('.expense-row');
@@ -712,8 +949,10 @@
     render();
   });
 
-  document.querySelectorAll('input').forEach(el => el.addEventListener('input', render));
+  document.querySelectorAll('input:not(.log-field)').forEach(el => el.addEventListener('input', render));
   renderExpenses();
   render();
   fetchLiveRate();
+  applyLegDefaults();
+  renderLog();
 </script>
