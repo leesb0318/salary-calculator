@@ -391,22 +391,31 @@
     <div class="bubble"><span id="bubbleText">숫자를 넣으면 삐빅! 계산해줄게요.</span></div>
   </div>
 
-  <div class="card">
-    <h2>월급</h2>
-    <div class="field">
-      <label for="grossNow">현재 세전 월급</label>
-      <div class="num-input">
-        <input id="grossNow" type="number" inputmode="decimal" value="16000" step="100">
-        <span class="unit">🪙 위안</span>
+  <div class="card settings-card">
+    <button type="button" class="settings-toggle" id="grossToggle" aria-expanded="true" aria-controls="grossBody">
+      <span>월급</span>
+      <span class="chev" id="grossChev">▴ 접기</span>
+    </button>
+    <div class="collapse open" id="grossBody">
+      <div class="collapse-inner">
+        <div class="collapse-pad">
+          <div class="field">
+            <label for="grossNow">현재 세전 월급</label>
+            <div class="num-input">
+              <input id="grossNow" type="number" inputmode="decimal" value="16000" step="100">
+              <span class="unit">🪙 위안</span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="grossAfter">인상 후 세전 월급</label>
+            <div class="num-input">
+              <input id="grossAfter" type="number" inputmode="decimal" value="18000" step="100">
+              <span class="unit">🪙 위안</span>
+            </div>
+            <div class="quick-row" id="quickRow"></div>
+          </div>
+        </div>
       </div>
-    </div>
-    <div class="field">
-      <label for="grossAfter">인상 후 세전 월급</label>
-      <div class="num-input">
-        <input id="grossAfter" type="number" inputmode="decimal" value="18000" step="100">
-        <span class="unit">🪙 위안</span>
-      </div>
-      <div class="quick-row" id="quickRow"></div>
     </div>
   </div>
 
@@ -590,11 +599,22 @@
   const fmtSigned = (n) => (n > 0 ? '+' : n < 0 ? '−' : '') + Math.abs(Math.round(n)).toLocaleString('ko-KR');
 
   let currency = 'KRW';
-  let expenses = [
-    { id: 1, label: '월세', amount: 0 },
-    { id: 2, label: '통신비', amount: 0 },
-  ];
-  let nextExpenseId = 3;
+  let expenses;
+  try {
+    const saved = JSON.parse(localStorage.getItem('salaryCalcExpenses'));
+    expenses = Array.isArray(saved) ? saved : null;
+  } catch (e) { expenses = null; }
+  if (!expenses) {
+    expenses = [
+      { id: 1, label: '월세', amount: 0 },
+      { id: 2, label: '통신비', amount: 0 },
+    ];
+  }
+  let nextExpenseId = expenses.reduce((max, x) => Math.max(max, x.id || 0), 0) + 1;
+
+  function saveExpensesToStorage() {
+    try { localStorage.setItem('salaryCalcExpenses', JSON.stringify(expenses)); } catch (e) {}
+  }
 
   function renderExpenses() {
     $('expenseList').innerHTML = expenses.map(exp => `
@@ -729,13 +749,18 @@
     render();
   });
 
-  const settingsToggle = $('settingsToggle');
-  const settingsBody = $('settingsBody');
-  settingsToggle.addEventListener('click', () => {
-    const open = settingsBody.classList.toggle('open');
-    settingsToggle.setAttribute('aria-expanded', String(open));
-    $('settingsChev').textContent = open ? '▴ 접기' : '▾ 펼치기';
-  });
+  function wireCollapse(toggleId, bodyId, chevId) {
+    const toggle = $(toggleId);
+    const body = $(bodyId);
+    const chev = $(chevId);
+    toggle.addEventListener('click', () => {
+      const open = body.classList.toggle('open');
+      toggle.setAttribute('aria-expanded', String(open));
+      chev.textContent = open ? '▴ 접기' : '▾ 펼치기';
+    });
+  }
+  wireCollapse('settingsToggle', 'settingsBody', 'settingsChev');
+  wireCollapse('grossToggle', 'grossBody', 'grossChev');
 
   const steps = [500, 1000, 2000, 3000];
   $('quickRow').innerHTML = steps.map(s => `<button type="button" data-step="${s}">+${s}</button>`).join('');
@@ -1067,6 +1092,7 @@
     if (!exp) return;
     if (e.target.classList.contains('exp-label')) exp.label = e.target.value;
     if (e.target.classList.contains('exp-amount')) exp.amount = parseFloat(e.target.value) || 0;
+    saveExpensesToStorage();
     render();
   });
   $('expenseList').addEventListener('click', (e) => {
@@ -1074,11 +1100,13 @@
     if (!btn) return;
     const r = btn.closest('.expense-row');
     expenses = expenses.filter(x => x.id !== Number(r.dataset.id));
+    saveExpensesToStorage();
     renderExpenses();
     render();
   });
   $('addExpenseBtn').addEventListener('click', () => {
     expenses.push({ id: nextExpenseId++, label: '', amount: 0 });
+    saveExpensesToStorage();
     renderExpenses();
     render();
   });
