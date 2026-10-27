@@ -554,10 +554,12 @@
     <div class="log-preview" id="logPreview"></div>
     <button type="button" class="fetch-btn" id="saveLogBtn">이 기록 저장하기</button>
 
+    <div class="stat acc full" id="currentMonthStat" style="margin-top: 16px;"></div>
+
     <div id="logHistory"></div>
 
     <div class="quick-row">
-      <button type="button" id="exportLogBtn">내보내기(JSON)</button>
+      <button type="button" id="exportLogBtn">내보내기</button>
       <button type="button" id="importLogBtn">가져오기</button>
     </div>
     <input type="file" id="importLogFile" accept="application/json" hidden>
@@ -804,6 +806,12 @@
   }
 
   function renderLog() {
+    const nowMonth = new Date().toISOString().slice(0, 7);
+    const thisMonthRecs = logRecords.filter(r => (r.date || '').slice(0, 7) === nowMonth);
+    const thisMonthCNY = thisMonthRecs.reduce((s, r) => s + r.netCNY, 0);
+    const thisMonthKRW = thisMonthRecs.reduce((s, r) => s + r.netKRW, 0);
+    $('currentMonthStat').innerHTML = `<div class="label">이번 달(${nowMonth}) 합계 · ${thisMonthRecs.length}건</div><div class="value">${fmt(thisMonthCNY)}위안 · ${fmt(thisMonthKRW)}원</div>`;
+
     const container = $('logHistory');
     if (logRecords.length === 0) {
       container.innerHTML = '<p class="log-empty">아직 저장된 기록이 없어요. 위에서 입력하고 저장해보세요.</p>';
