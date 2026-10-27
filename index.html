@@ -308,7 +308,26 @@
     font-family: "Black Han Sans", "Noto Sans KR", sans-serif; font-size: 14px; color: var(--fg);
     padding-bottom: 8px; margin-bottom: 8px; border-bottom: 2px solid var(--border);
   }
+  .month-right { display: flex; align-items: baseline; gap: 8px; }
   .month-head .total { font-family: "VT323", monospace; font-size: 17px; color: var(--accent); }
+  .delta {
+    font-family: "Noto Sans KR", sans-serif; font-size: 11px; font-weight: 700;
+    padding: 2px 7px; border-radius: 2px;
+  }
+  .delta-pos { color: var(--positive); background: var(--positive-soft); }
+  .delta-neg { color: var(--negative); background: var(--negative-soft); }
+
+  .quarter-label {
+    font-family: "Noto Sans KR", sans-serif; font-size: 12px; font-weight: 700;
+    color: var(--fg-dim); margin: 16px 0 8px;
+  }
+  .quarter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px; }
+  .quarter-tile {
+    border: 2px solid var(--border); border-radius: 3px; padding: 8px 10px;
+    background: var(--surface-2); text-align: center;
+  }
+  .quarter-tile .label { font-size: 10.5px; color: var(--fg-faint); font-weight: 700; margin-bottom: 2px; }
+  .quarter-tile .value { font-family: "VT323", monospace; font-size: 18px; color: var(--accent); }
   .log-table { width: 100%; border-collapse: collapse; font-size: 12px; }
   .log-table th, .log-table td { padding: 7px 6px; text-align: right; border-bottom: 1px solid var(--border); }
   .log-table th:first-child, .log-table td:first-child { text-align: left; }
@@ -557,6 +576,8 @@
 
     <div class="stat acc full" id="currentMonthStat" style="margin-top: 16px;"></div>
 
+    <div id="quarterStats"></div>
+
     <div id="logHistory"></div>
 
     <button type="button" class="fetch-btn" id="exportXlsxBtn">엑셀로 내보내기</button>
@@ -799,12 +820,44 @@
     $('logPreview').innerHTML = `${currentLeg} 세후 실수령 예상: <strong>${fmt(netCNY)}위안</strong> · 원화 환산 <strong>${fmt(netKRW)}원</strong>`;
   }
 
+  function prevMonthKey(monthKey) {
+    const [y, m] = monthKey.split('-').map(Number);
+    const d = new Date(y, m - 2, 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  }
+
+  function renderQuarterStats() {
+    const buckets = {};
+    logRecords.forEach(r => {
+      if (!r.date) return;
+      const [y, m] = r.date.split('-').map(Number);
+      if (!y || !m) return;
+      const q = Math.floor((m - 1) / 3) + 1;
+      const key = `${y} Q${q}`;
+      (buckets[key] = buckets[key] || []).push(r.fx);
+    });
+    const keys = Object.keys(buckets).sort();
+    const el = $('quarterStats');
+    if (keys.length === 0) { el.innerHTML = ''; return; }
+    el.innerHTML = `
+      <div class="quarter-label">분기별 평균 환율</div>
+      <div class="quarter-grid">
+        ${keys.map(k => {
+          const vals = buckets[k];
+          const avg = vals.reduce((s, v) => s + v, 0) / vals.length;
+          return `<div class="quarter-tile"><div class="label">${k}</div><div class="value">${avg.toFixed(1)}원</div></div>`;
+        }).join('')}
+      </div>`;
+  }
+
   function renderLog() {
     const nowMonth = new Date().toISOString().slice(0, 7);
     const thisMonthRecs = logRecords.filter(r => (r.date || '').slice(0, 7) === nowMonth);
     const thisMonthCNY = thisMonthRecs.reduce((s, r) => s + r.netCNY, 0);
     const thisMonthKRW = thisMonthRecs.reduce((s, r) => s + r.netKRW, 0);
     $('currentMonthStat').innerHTML = `<div class="label">이번 달(${nowMonth}) 합계 · ${thisMonthRecs.length}건</div><div class="value">${fmt(thisMonthCNY)}위안 · ${fmt(thisMonthKRW)}원</div>`;
+
+    renderQuarterStats();
 
     const container = $('logHistory');
     if (logRecords.length === 0) {
@@ -816,11 +869,26 @@
       const month = (r.date || '').slice(0, 7) || '날짜 없음';
       (groups[month] = groups[month] || []).push(r);
     });
+    const monthTotalsKRW = {};
+    Object.keys(groups).forEach(month => {
+      monthTotalsKRW[month] = groups[month].reduce((s, r) => s + r.netKRW, 0);
+    });
     const months = Object.keys(groups).sort().reverse();
     container.innerHTML = months.map(month => {
       const recs = groups[month].slice().sort((a, b) => (a.date || '').localeCompare(b.date || ''));
       const totalNetCNY = recs.reduce((s, r) => s + r.netCNY, 0);
       const totalNetKRW = recs.reduce((s, r) => s + r.netKRW, 0);
+
+      let deltaHtml = '';
+      const prevKey = prevMonthKey(month);
+      if (prevKey in monthTotalsKRW && monthTotalsKRW[prevKey] !== 0) {
+        const prevVal = monthTotalsKRW[prevKey];
+        const delta = ((totalNetKRW - prevVal) / Math.abs(prevVal)) * 100;
+        const cls = delta > 0 ? 'delta-pos' : delta < 0 ? 'delta-neg' : '';
+        const arrow = delta > 0 ? '▲' : delta < 0 ? '▼' : '-';
+        deltaHtml = `<span class="delta ${cls}">${arrow} ${Math.abs(delta).toFixed(1)}%</span>`;
+      }
+
       const rows = recs.map(r => `
         <tr>
           <td>${r.date || '-'}</td>
@@ -834,7 +902,10 @@
         </tr>`).join('');
       return `
         <div class="month-group">
-          <div class="month-head"><span>${month}</span><span class="total">${fmt(totalNetCNY)}위안 · ${fmt(totalNetKRW)}원</span></div>
+          <div class="month-head">
+            <span>${month}</span>
+            <span class="month-right">${deltaHtml}<span class="total">${fmt(totalNetCNY)}위안 · ${fmt(totalNetKRW)}원</span></span>
+          </div>
           <div class="row-scroll">
             <table class="log-table">
               <thead><tr><th>날짜</th><th>구분</th><th class="num">세전</th><th class="num">비율</th><th class="num">환율</th><th class="num">세후(위안)</th><th class="num">환산(원)</th><th></th></tr></thead>
