@@ -2,6 +2,7 @@
 <title>월급 실수령 계산기</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;600;700&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   /*
     layout: single centered column (max 600px) styled as an old handheld
@@ -558,12 +559,8 @@
 
     <div id="logHistory"></div>
 
-    <div class="quick-row">
-      <button type="button" id="exportLogBtn">내보내기</button>
-      <button type="button" id="importLogBtn">가져오기</button>
-    </div>
-    <input type="file" id="importLogFile" accept="application/json" hidden>
-    <p class="hint" id="logImportStatus">기록은 이 브라우저에만 저장돼요(localStorage). 다른 기기로 옮기려면 내보내기/가져오기를 쓰세요.</p>
+    <button type="button" class="fetch-btn" id="exportXlsxBtn">엑셀로 내보내기</button>
+    <p class="hint" id="logStatus">기록은 이 브라우저에만 저장돼요(localStorage).</p>
   </div>
 
   <footer>
@@ -897,39 +894,35 @@
     renderLog();
   });
 
-  $('exportLogBtn').addEventListener('click', () => {
-    const blob = new Blob([JSON.stringify(logRecords, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'salary-log.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  });
-
-  $('importLogBtn').addEventListener('click', () => $('importLogFile').click());
-  $('importLogFile').addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const imported = JSON.parse(reader.result);
-        if (!Array.isArray(imported)) throw new Error('invalid');
-        const existingIds = new Set(logRecords.map(r => r.id));
-        let added = 0;
-        imported.forEach(r => { if (r && !existingIds.has(r.id)) { logRecords.push(r); added++; } });
-        saveLogToStorage();
-        renderLog();
-        $('logImportStatus').textContent = `${added}건 가져왔어요. 기록은 이 브라우저에만 저장돼요(localStorage).`;
-      } catch (err) {
-        $('logImportStatus').textContent = '파일을 읽지 못했어요. 올바른 JSON 파일인지 확인해주세요.';
-      }
-    };
-    reader.readAsText(file);
-    e.target.value = '';
+  $('exportXlsxBtn').addEventListener('click', () => {
+    const status = $('logStatus');
+    if (typeof XLSX === 'undefined') {
+      status.textContent = '엑셀 내보내기 기능을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.';
+      return;
+    }
+    if (logRecords.length === 0) {
+      status.textContent = '내보낼 기록이 없어요.';
+      return;
+    }
+    const rows = logRecords
+      .slice()
+      .sort((a, b) => (a.date || '').localeCompare(b.date || ''))
+      .map(r => ({
+        '날짜': r.date,
+        '연월': (r.date || '').slice(0, 7),
+        '구분': r.leg,
+        '세전(위안)': r.gross,
+        '비율(%)': r.rate,
+        '환율(원/위안)': r.fx,
+        '세후실수령(위안)': Math.round(r.netCNY * 100) / 100,
+        '원화환산(원)': Math.round(r.netKRW),
+      }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [{ wch: 12 }, { wch: 8 }, { wch: 6 }, { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 16 }, { wch: 14 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '지급기록');
+    XLSX.writeFile(wb, 'salary-log.xlsx');
+    status.textContent = `${rows.length}건을 엑셀 파일로 내보냈어요.`;
   });
 
   $('logDate').value = new Date().toISOString().slice(0, 10);
