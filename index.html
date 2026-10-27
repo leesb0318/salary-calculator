@@ -574,6 +574,7 @@
     <div class="stat acc full" id="currentMonthStat" style="margin-top: 16px;"></div>
 
     <div id="quarterStats"></div>
+    <div id="salaryTrendStats"></div>
 
     <div id="logHistory"></div>
 
@@ -823,6 +824,63 @@
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
   }
 
+  function buildTrendChart(points, formatValue, opts = {}) {
+    const W = 600, H = 200;
+    const padL = opts.padL || 46;
+    const padR = opts.padR || 22;
+    const padT = 32;
+    const padB = 30;
+    const plotW = W - padL - padR;
+    const plotH = H - padT - padB;
+
+    const values = points.map(p => p.value);
+    let minV = Math.min(...values), maxV = Math.max(...values);
+    if (minV === maxV) {
+      const bump = Math.abs(minV) * 0.1 || 1;
+      minV -= bump; maxV += bump;
+    }
+    const vpad = (maxV - minV) * 0.25;
+    minV -= vpad; maxV += vpad;
+
+    const xFor = (i) => points.length === 1 ? padL + plotW / 2 : padL + (plotW * i) / (points.length - 1);
+    const yFor = (v) => padT + plotH - ((v - minV) / (maxV - minV)) * plotH;
+    const coords = points.map((p, i) => ({ key: p.key, value: p.value, x: xFor(i), y: yFor(p.value) }));
+
+    // first/last point labels anchor outward (start/end) instead of centering,
+    // so they never overhang past the svg's own edges and get clipped
+    const anchorFor = (i) => points.length === 1 ? 'middle' : i === 0 ? 'start' : i === points.length - 1 ? 'end' : 'middle';
+    const dxFor = (i) => points.length === 1 ? 0 : i === 0 ? 5 : i === points.length - 1 ? -5 : 0;
+
+    const gridLines = [0, 0.5, 1].map(t => {
+      const y = padT + plotH * t;
+      const v = maxV - (maxV - minV) * t;
+      return `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="var(--border)" stroke-width="1" stroke-dasharray="3,3" />
+        <text x="${padL - 8}" y="${(y + 4).toFixed(1)}" text-anchor="end" font-size="10.5" font-family="'Noto Sans KR',sans-serif" style="fill:var(--fg-faint)">${formatValue(v)}</text>`;
+    }).join('');
+
+    const pathD = coords.map((c, i) => `${i === 0 ? 'M' : 'L'} ${c.x.toFixed(1)} ${c.y.toFixed(1)}`).join(' ');
+
+    const dots = coords.map((c, i) => {
+      const anchor = anchorFor(i);
+      const dx = dxFor(i);
+      const labelY = Math.max(c.y - 12, 16);
+      return `
+        <circle cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="4.5" style="fill:var(--accent)" stroke="var(--surface-2)" stroke-width="2" />
+        <text x="${(c.x + dx).toFixed(1)}" y="${labelY.toFixed(1)}" text-anchor="${anchor}" font-size="13" font-family="'VT323',monospace" style="fill:var(--accent)">${formatValue(c.value)}</text>
+        <text x="${(c.x + dx).toFixed(1)}" y="${H - 8}" text-anchor="${anchor}" font-size="10.5" font-family="'Noto Sans KR',sans-serif" style="fill:var(--fg-dim)">${c.key}</text>
+      `;
+    }).join('');
+
+    return `
+      <div class="quarter-chart-wrap">
+        <svg viewBox="0 0 ${W} ${H}" style="width:100%; height:auto; display:block;">
+          ${gridLines}
+          <path d="${pathD}" fill="none" style="stroke:var(--accent); stroke-width:2.5;" />
+          ${dots}
+        </svg>
+      </div>`;
+  }
+
   function renderQuarterStats() {
     const buckets = {};
     logRecords.forEach(r => {
@@ -836,51 +894,24 @@
     const keys = Object.keys(buckets).sort();
     const el = $('quarterStats');
     if (keys.length === 0) { el.innerHTML = ''; return; }
+    const points = keys.map(k => ({ key: k, value: buckets[k].reduce((s, v) => s + v, 0) / buckets[k].length }));
+    el.innerHTML = `<div class="quarter-label">분기별 평균 환율 추세</div>`
+      + buildTrendChart(points, v => v.toFixed(1), { padL: 44 });
+  }
 
-    const points = keys.map(k => {
-      const vals = buckets[k];
-      return { key: k, avg: vals.reduce((s, v) => s + v, 0) / vals.length };
+  function renderSalaryTrend() {
+    const el = $('salaryTrendStats');
+    const groups = {};
+    logRecords.forEach(r => {
+      const month = (r.date || '').slice(0, 7);
+      if (!month) return;
+      (groups[month] = groups[month] || []).push(r);
     });
-
-    const W = 600, H = 200;
-    const padL = 44, padR = 16, padT = 26, padB = 30;
-    const plotW = W - padL - padR;
-    const plotH = H - padT - padB;
-
-    const values = points.map(p => p.avg);
-    let minV = Math.min(...values), maxV = Math.max(...values);
-    if (minV === maxV) { minV -= 1; maxV += 1; }
-    const pad = (maxV - minV) * 0.2;
-    minV -= pad; maxV += pad;
-
-    const xFor = (i) => points.length === 1 ? padL + plotW / 2 : padL + (plotW * i) / (points.length - 1);
-    const yFor = (v) => padT + plotH - ((v - minV) / (maxV - minV)) * plotH;
-    const coords = points.map((p, i) => ({ key: p.key, avg: p.avg, x: xFor(i), y: yFor(p.avg) }));
-
-    const gridLines = [0, 0.5, 1].map(t => {
-      const y = padT + plotH * t;
-      const v = maxV - (maxV - minV) * t;
-      return `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="var(--border)" stroke-width="1" stroke-dasharray="3,3" />
-        <text x="${padL - 8}" y="${(y + 4).toFixed(1)}" text-anchor="end" font-size="10.5" font-family="'Noto Sans KR',sans-serif" style="fill:var(--fg-faint)">${v.toFixed(0)}</text>`;
-    }).join('');
-
-    const pathD = coords.map((c, i) => `${i === 0 ? 'M' : 'L'} ${c.x.toFixed(1)} ${c.y.toFixed(1)}`).join(' ');
-
-    const dots = coords.map(c => `
-      <circle cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="4.5" style="fill:var(--accent)" stroke="var(--surface-2)" stroke-width="2" />
-      <text x="${c.x.toFixed(1)}" y="${(c.y - 12).toFixed(1)}" text-anchor="middle" font-size="13" font-family="'VT323',monospace" style="fill:var(--accent)">${c.avg.toFixed(1)}</text>
-      <text x="${c.x.toFixed(1)}" y="${H - 8}" text-anchor="middle" font-size="10.5" font-family="'Noto Sans KR',sans-serif" style="fill:var(--fg-dim)">${c.key}</text>
-    `).join('');
-
-    el.innerHTML = `
-      <div class="quarter-label">분기별 평균 환율 추세</div>
-      <div class="quarter-chart-wrap">
-        <svg viewBox="0 0 ${W} ${H}" style="width:100%; height:auto; display:block;">
-          ${gridLines}
-          <path d="${pathD}" fill="none" style="stroke:var(--accent); stroke-width:2.5;" />
-          ${dots}
-        </svg>
-      </div>`;
+    const months = Object.keys(groups).sort();
+    if (months.length === 0) { el.innerHTML = ''; return; }
+    const points = months.map(m => ({ key: m, value: groups[m].reduce((s, r) => s + r.netKRW, 0) }));
+    el.innerHTML = `<div class="quarter-label">월별 실수령 추세 (원)</div>`
+      + buildTrendChart(points, v => Math.round(v).toLocaleString('ko-KR'), { padL: 70 });
   }
 
   function renderLog() {
@@ -891,6 +922,7 @@
     $('currentMonthStat').innerHTML = `<div class="label">이번 달(${nowMonth}) 합계 · ${thisMonthRecs.length}건</div><div class="value">${fmt(thisMonthCNY)}위안 · ${fmt(thisMonthKRW)}원</div>`;
 
     renderQuarterStats();
+    renderSalaryTrend();
 
     const container = $('logHistory');
     if (logRecords.length === 0) {
