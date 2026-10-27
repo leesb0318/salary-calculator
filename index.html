@@ -168,6 +168,35 @@
   .quick-row button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .quick-row button.active { background: var(--accent); color: var(--accent-fg); }
 
+  .preset-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+    margin-top: 10px;
+  }
+  .preset-grid button {
+    font-family: "Press Start 2P", monospace; font-size: 11px;
+    background: var(--gold); color: #2a2100;
+    border: 3px solid var(--ink); border-radius: 2px;
+    padding: 10px 6px; cursor: pointer; text-align: center;
+    box-shadow: 0 3px 0 var(--shadow-strong);
+    transition: transform .08s ease;
+  }
+  .preset-grid button:active { transform: translateY(3px); box-shadow: 0 0 0 var(--shadow-strong); }
+  .preset-grid button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .preset-grid button.active { background: var(--accent); color: var(--accent-fg); }
+
+  .fetch-btn {
+    display: block; width: 100%; margin-top: 10px;
+    font-family: "Press Start 2P", monospace; font-size: 11px;
+    background: var(--accent); color: var(--accent-fg);
+    border: 3px solid var(--ink); border-radius: 2px;
+    padding: 12px 10px; cursor: pointer; text-align: center;
+    box-shadow: 0 3px 0 var(--shadow-strong);
+    transition: transform .08s ease;
+  }
+  .fetch-btn:active { transform: translateY(3px); box-shadow: 0 0 0 var(--shadow-strong); }
+  .fetch-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .fetch-btn:disabled { opacity: .6; cursor: default; }
+
   .settings-toggle {
     width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px;
     background: transparent; border: none; cursor: pointer; text-align: left;
@@ -291,10 +320,8 @@
         <input id="fx" type="number" inputmode="decimal" value="190" step="1">
         <span class="unit">원/위안</span>
       </div>
-      <div class="quick-row" id="fxPresetRow"></div>
-      <div class="quick-row">
-        <button type="button" id="fetchFxBtn">🔄 실시간 환율 불러오기</button>
-      </div>
+      <div class="preset-grid" id="fxPresetRow"></div>
+      <button type="button" class="fetch-btn" id="fetchFxBtn">🔄 실시간 환율 불러오기</button>
       <p class="hint" id="fxStatus">버튼을 누르면 최신 환율을 자동으로 가져와요.</p>
     </div>
   </div>
