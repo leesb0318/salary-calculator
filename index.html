@@ -221,12 +221,16 @@
   .collapse.open { grid-template-rows: 1fr; }
   .collapse-inner { overflow: hidden; min-height: 0; }
   .collapse-pad { padding: 0 18px 20px; }
-  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  @media (max-width: 420px) { .grid2 { grid-template-columns: 1fr; } }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
 
-  .field-group { margin-bottom: 18px; }
+  .field-group { margin-bottom: 18px; min-width: 0; }
   .field-group:last-of-type { margin-bottom: 0; }
   .field-group + .field-group { padding-top: 16px; border-top: 2px dashed var(--border); }
+  @media (min-width: 900px) {
+    .field-group-row { display: grid; grid-template-columns: 1fr 1fr; column-gap: 24px; align-items: start; }
+    .field-group-row .field-group { margin-bottom: 0; }
+    .field-group-row .field-group + .field-group { padding-top: 0; border-top: none; border-left: 2px dashed var(--border); padding-left: 24px; }
+  }
   .subhead {
     display: flex; align-items: center; justify-content: space-between; gap: 8px;
     font-family: "Noto Sans KR", sans-serif; font-size: 13px; font-weight: 700;
@@ -579,6 +583,55 @@
   </div>
 
   <div class="card settings-card">
+    <button type="button" class="settings-toggle" id="expenseToggle" aria-expanded="true" aria-controls="expenseBody">
+      <span>고정비용</span>
+      <span class="chev" id="expenseChev">▴ 접기</span>
+    </button>
+    <div class="collapse open" id="expenseBody">
+      <div class="collapse-inner">
+        <div class="collapse-pad">
+          <div id="expenseList"></div>
+          <div class="quick-row">
+            <button type="button" id="addExpenseBtn">+ 항목 추가</button>
+          </div>
+          <div class="expense-total">
+            <span>고정비용 합계</span>
+            <span class="value" id="expenseTotalValue"></span>
+          </div>
+          <p class="hint">월세, 통신비, 구독료처럼 매달 고정으로 나가는 돈을 넣으면 실수령액에서 자동으로 빼서 보여줘요. 금액은 위안(CNY) 기준으로 입력하세요.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  </div>
+  <div class="calc-col">
+
+  <div class="card">
+    <h2>비교표<span class="unit-tag" id="tableUnitTag"></span></h2>
+    <div class="row-scroll">
+      <table id="table">
+        <thead>
+          <tr><th>항목</th><th class="num">지금</th><th class="num">인상 후</th><th class="num">차액</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>요약<span class="unit-tag" id="summaryUnitTag"></span></h2>
+    <div class="summary" id="summary"></div>
+    <div class="gauge-wrap">
+      <div class="gauge-label"><span>실수령 반영률</span><span id="gaugePct">0%</span></div>
+      <div class="gauge"><div class="gauge-fill" id="gaugeFill" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  </div>
+  </div>
+
+  <div class="card settings-card">
     <button type="button" class="settings-toggle" id="settingsToggle" aria-expanded="false" aria-controls="settingsBody">
       <span>지급 구조 설정</span>
       <span class="chev" id="settingsChev">▾ 펼치기</span>
@@ -586,6 +639,7 @@
     <div class="collapse" id="settingsBody">
       <div class="collapse-inner">
         <div class="collapse-pad">
+          <div class="field-group-row">
           <div class="field-group">
             <h3 class="subhead"><span>지금 기준</span></h3>
             <div class="grid2">
@@ -656,6 +710,7 @@
               </div>
             </div>
           </div>
+          </div>
 
           <p class="hint">사회보험 공제율은 "10000위안 → 8831.5위안" 실수령 내역으로 역산한 값(1168.5÷10000)이에요. 개인소득세는 아직 확인 전이라 기본값 0이에요. "인상 후" 구조(고정액·공제율 등)가 지금과 같다면 그대로 두거나 "지금 값 복사"를 누르면 되고, 회사 정책이 바뀔 걸로 예상되면 "인상 후 기준" 값만 따로 고치세요.</p>
         </div>
@@ -664,56 +719,13 @@
   </div>
 
   <div class="card settings-card">
-    <button type="button" class="settings-toggle" id="expenseToggle" aria-expanded="true" aria-controls="expenseBody">
-      <span>고정비용</span>
-      <span class="chev" id="expenseChev">▴ 접기</span>
+    <button type="button" class="settings-toggle" id="logToggle" aria-expanded="false" aria-controls="logBody">
+      <span>지급 기록</span>
+      <span class="chev" id="logChev">▾ 펼치기</span>
     </button>
-    <div class="collapse open" id="expenseBody">
+    <div class="collapse" id="logBody">
       <div class="collapse-inner">
         <div class="collapse-pad">
-          <div id="expenseList"></div>
-          <div class="quick-row">
-            <button type="button" id="addExpenseBtn">+ 항목 추가</button>
-          </div>
-          <div class="expense-total">
-            <span>고정비용 합계</span>
-            <span class="value" id="expenseTotalValue"></span>
-          </div>
-          <p class="hint">월세, 통신비, 구독료처럼 매달 고정으로 나가는 돈을 넣으면 실수령액에서 자동으로 빼서 보여줘요. 금액은 위안(CNY) 기준으로 입력하세요.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  </div>
-  <div class="calc-col">
-
-  <div class="card">
-    <h2>비교표<span class="unit-tag" id="tableUnitTag"></span></h2>
-    <div class="row-scroll">
-      <table id="table">
-        <thead>
-          <tr><th>항목</th><th class="num">지금</th><th class="num">인상 후</th><th class="num">차액</th></tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="card">
-    <h2>요약<span class="unit-tag" id="summaryUnitTag"></span></h2>
-    <div class="summary" id="summary"></div>
-    <div class="gauge-wrap">
-      <div class="gauge-label"><span>실수령 반영률</span><span id="gaugePct">0%</span></div>
-      <div class="gauge"><div class="gauge-fill" id="gaugeFill" style="width:0%"></div></div>
-    </div>
-  </div>
-
-  </div>
-  </div>
-
-  <div class="card">
-    <h2>지급 기록</h2>
     <div class="grid2">
       <div class="field">
         <label for="logDate">날짜</label>
@@ -763,6 +775,9 @@
 
     <button type="button" class="fetch-btn" id="exportXlsxBtn">엑셀로 내보내기</button>
     <p class="hint" id="logStatus">기록은 이 브라우저에만 저장돼요(localStorage).</p>
+        </div>
+      </div>
+    </div>
   </div>
 
 </div>
@@ -936,6 +951,7 @@
   wireCollapse('settingsToggle', 'settingsBody', 'settingsChev');
   wireCollapse('grossToggle', 'grossBody', 'grossChev');
   wireCollapse('expenseToggle', 'expenseBody', 'expenseChev');
+  wireCollapse('logToggle', 'logBody', 'logChev');
 
   const steps = [500, 1000, 2000, 3000];
   $('quickRow').innerHTML = steps.map(s => `<button type="button" data-step="${s}">+${s}</button>`).join('');
