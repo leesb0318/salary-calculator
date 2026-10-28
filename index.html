@@ -519,54 +519,17 @@
     </div>
   </div>
 
-  <div class="card settings-card">
-    <button type="button" class="settings-toggle" id="grossToggle" aria-expanded="true" aria-controls="grossBody">
-      <span>월급</span>
-      <span class="chev" id="grossChev">▴ 접기</span>
-    </button>
-    <div class="collapse open" id="grossBody">
-      <div class="collapse-inner">
-        <div class="collapse-pad">
-          <div class="field">
-            <label for="grossNow">현재 세전 월급</label>
-            <div class="num-input">
-              <input id="grossNow" type="number" inputmode="decimal" value="16000" step="100">
-              <span class="unit">🪙 위안</span>
-            </div>
-          </div>
-          <div class="field">
-            <label for="grossAfter">인상 후 세전 월급</label>
-            <div class="num-input">
-              <input id="grossAfter" type="number" inputmode="decimal" value="18000" step="100">
-              <span class="unit">🪙 위안</span>
-            </div>
-            <div class="quick-row" id="quickRow"></div>
-          </div>
-        </div>
-      </div>
+  <div class="card">
+    <h2>고정비용</h2>
+    <div id="expenseList"></div>
+    <div class="quick-row">
+      <button type="button" id="addExpenseBtn">+ 항목 추가</button>
     </div>
-  </div>
-
-  <div class="card settings-card">
-    <button type="button" class="settings-toggle" id="expenseToggle" aria-expanded="false" aria-controls="expenseBody">
-      <span>고정비용</span>
-      <span class="chev" id="expenseChev">▾ 펼치기</span>
-    </button>
-    <div class="collapse" id="expenseBody">
-      <div class="collapse-inner">
-        <div class="collapse-pad">
-          <div id="expenseList"></div>
-          <div class="quick-row">
-            <button type="button" id="addExpenseBtn">+ 항목 추가</button>
-          </div>
-          <div class="expense-total">
-            <span>고정비용 합계</span>
-            <span class="value" id="expenseTotalValue"></span>
-          </div>
-          <p class="hint">월세, 통신비, 구독료처럼 매달 고정으로 나가는 돈을 넣으면 실수령액에서 자동으로 빼서 보여줘요. 금액은 위안(CNY) 기준으로 입력하세요.</p>
-        </div>
-      </div>
+    <div class="expense-total">
+      <span>고정비용 합계</span>
+      <span class="value" id="expenseTotalValue"></span>
     </div>
+    <p class="hint">월세, 통신비, 구독료처럼 매달 고정으로 나가는 돈을 넣으면 실수령액에서 자동으로 빼서 보여줘요. 금액은 위안(CNY) 기준으로 입력하세요.</p>
   </div>
 
   </div>
@@ -594,6 +557,34 @@
   </div>
 
   </div>
+  </div>
+
+  <div class="card settings-card">
+    <button type="button" class="settings-toggle" id="grossToggle" aria-expanded="true" aria-controls="grossBody">
+      <span>월급</span>
+      <span class="chev" id="grossChev">▴ 접기</span>
+    </button>
+    <div class="collapse open" id="grossBody">
+      <div class="collapse-inner">
+        <div class="collapse-pad">
+          <div class="field">
+            <label for="grossNow">현재 세전 월급</label>
+            <div class="num-input">
+              <input id="grossNow" type="number" inputmode="decimal" value="16000" step="100">
+              <span class="unit">🪙 위안</span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="grossAfter">인상 후 세전 월급</label>
+            <div class="num-input">
+              <input id="grossAfter" type="number" inputmode="decimal" value="18000" step="100">
+              <span class="unit">🪙 위안</span>
+            </div>
+            <div class="quick-row" id="quickRow"></div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="card settings-card">
@@ -907,7 +898,6 @@
   }
   wireCollapse('settingsToggle', 'settingsBody', 'settingsChev');
   wireCollapse('grossToggle', 'grossBody', 'grossChev');
-  wireCollapse('expenseToggle', 'expenseBody', 'expenseChev');
   wireCollapse('logToggle', 'logBody', 'logChev');
 
   const steps = [500, 1000, 2000, 3000];
