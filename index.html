@@ -609,20 +609,23 @@
     <div class="collapse open" id="grossBody">
       <div class="collapse-inner">
         <div class="collapse-pad">
-          <div class="field">
-            <label for="grossNow">현재 세전 월급</label>
-            <div class="num-input">
-              <input id="grossNow" type="number" inputmode="decimal" value="16000" step="100">
-              <span class="unit">🪙 위안</span>
+          <div class="grid2">
+            <div class="field">
+              <label for="grossNow">현재 세전 월급</label>
+              <div class="num-input">
+                <input id="grossNow" type="number" inputmode="decimal" value="16000" step="100">
+                <span class="unit">🪙 위안</span>
+              </div>
+              <div class="quick-row" id="quickRowNow"></div>
             </div>
-          </div>
-          <div class="field">
-            <label for="grossAfter">인상 후 세전 월급</label>
-            <div class="num-input">
-              <input id="grossAfter" type="number" inputmode="decimal" value="18000" step="100">
-              <span class="unit">🪙 위안</span>
+            <div class="field">
+              <label for="grossAfter">인상 후 세전 월급</label>
+              <div class="num-input">
+                <input id="grossAfter" type="number" inputmode="decimal" value="18000" step="100">
+                <span class="unit">🪙 위안</span>
+              </div>
+              <div class="quick-row" id="quickRow"></div>
             </div>
-            <div class="quick-row" id="quickRow"></div>
           </div>
 
           <div class="field-group-row" style="margin-top: 18px; padding-top: 18px; border-top: 2px dashed var(--border);">
@@ -939,14 +942,18 @@
   wireCollapse('logToggle', 'logBody', 'logChev');
 
   const steps = [500, 1000, 2000, 3000];
-  $('quickRow').innerHTML = steps.map(s => `<button type="button" data-step="${s}">+${s}</button>`).join('');
-  $('quickRow').addEventListener('click', (e) => {
-    const btn = e.target.closest('button[data-step]');
-    if (!btn) return;
-    const current = parseFloat($('grossAfter').value) || 0;
-    $('grossAfter').value = current + parseFloat(btn.dataset.step);
-    render();
-  });
+  function wireQuickRow(rowId, inputId) {
+    $(rowId).innerHTML = steps.map(s => `<button type="button" data-step="${s}">+${s}</button>`).join('');
+    $(rowId).addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-step]');
+      if (!btn) return;
+      const current = parseFloat($(inputId).value) || 0;
+      $(inputId).value = current + parseFloat(btn.dataset.step);
+      render();
+    });
+  }
+  wireQuickRow('quickRowNow', 'grossNow');
+  wireQuickRow('quickRow', 'grossAfter');
 
   const fxPresets = [190, 195, 200, 205, 210, 215, 220, 225, 230];
   $('fxPresetRow').innerHTML = fxPresets.map(r => `<button type="button" data-fx="${r}">${r}원</button>`).join('');
