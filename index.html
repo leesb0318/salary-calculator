@@ -332,6 +332,9 @@
     border: 2px solid var(--border); border-radius: 3px; padding: 10px 8px 4px;
     background: var(--surface-2);
   }
+  @media (min-width: 980px) {
+    .chart-grid-2col { display: grid; grid-template-columns: 1fr 1fr; column-gap: 20px; align-items: start; }
+  }
   .log-table { width: 100%; border-collapse: collapse; font-size: 12px; }
   .log-table th, .log-table td { padding: 7px 6px; text-align: right; border-bottom: 1px solid var(--border); }
   .log-table th:first-child, .log-table td:first-child { text-align: left; }
@@ -753,8 +756,10 @@
 
     <div class="stat acc full" id="currentMonthStat" style="margin-top: 16px;"></div>
 
-    <div id="quarterStats"></div>
-    <div id="salaryTrendStats"></div>
+    <div class="chart-grid-2col">
+      <div id="quarterStats"></div>
+      <div id="salaryTrendStats"></div>
+    </div>
     <div id="fxBreakdownStats"></div>
 
     <div id="logHistory"></div>
