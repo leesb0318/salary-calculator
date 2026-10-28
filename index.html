@@ -647,6 +647,7 @@
     <div id="quarterStats"></div>
     <div id="salaryTrendStats"></div>
     <div id="fxBreakdownStats"></div>
+    <div id="deductionLossStats"></div>
 
     <div id="logHistory"></div>
 
@@ -1145,6 +1146,8 @@
         <text x="${padL - 8}" y="${(y + 4).toFixed(1)}" text-anchor="end" font-size="10" font-family="'Noto Sans KR',sans-serif" style="fill:var(--fg-faint)">${Math.round(v).toLocaleString('ko-KR')}</text>`;
     }).join('');
 
+    const fmtK = (v) => (v >= 0 ? '+' : '−') + Math.round(Math.abs(v)).toLocaleString('ko-KR');
+
     const bars = transitions.map((t, i) => {
       const cx = padL + groupW * (i + 0.5);
       const fxX = cx - barW - 3, amtX = cx + 3;
@@ -1153,12 +1156,24 @@
       const amtY = t.amountEffect >= 0 ? zeroY - amtH : zeroY;
       const fxColor = t.fxEffect >= 0 ? 'var(--positive)' : 'var(--negative)';
       const amtColor = t.amountEffect >= 0 ? 'var(--positive)' : 'var(--negative)';
+      const fxLabelY = t.fxEffect >= 0 ? fxY - 6 : fxY + Math.max(fxH, 1) + 12;
+      const amtLabelY = t.amountEffect >= 0 ? amtY - 6 : amtY + Math.max(amtH, 1) + 12;
       return `
         <rect x="${fxX.toFixed(1)}" y="${fxY.toFixed(1)}" width="${barW}" height="${Math.max(fxH, 1).toFixed(1)}" style="fill:${fxColor}; opacity:.5;" />
         <rect x="${amtX.toFixed(1)}" y="${amtY.toFixed(1)}" width="${barW}" height="${Math.max(amtH, 1).toFixed(1)}" style="fill:${amtColor};" />
+        <text x="${(fxX + barW / 2).toFixed(1)}" y="${fxLabelY.toFixed(1)}" text-anchor="middle" font-size="9.5" font-family="'VT323',monospace" style="fill:${fxColor}">${fmtK(t.fxEffect)}</text>
+        <text x="${(amtX + barW / 2).toFixed(1)}" y="${amtLabelY.toFixed(1)}" text-anchor="middle" font-size="9.5" font-family="'VT323',monospace" style="fill:${amtColor}">${fmtK(t.amountEffect)}</text>
         <text x="${cx.toFixed(1)}" y="${H - 26}" text-anchor="middle" font-size="10.5" font-family="'Noto Sans KR',sans-serif" style="fill:var(--fg-dim)">${t.label}</text>
       `;
     }).join('');
+
+    const tableRows = transitions.map(t => `
+      <tr>
+        <td>${t.label}</td>
+        <td class="num">${fmtK(t.fxEffect)}</td>
+        <td class="num">${fmtK(t.amountEffect)}</td>
+        <td class="num">${fmtK(t.fxEffect + t.amountEffect)}</td>
+      </tr>`).join('');
 
     el.innerHTML = `
       <div class="quarter-label">월별 환율 효과 vs 실수령 효과 (원)</div>
@@ -1168,6 +1183,86 @@
           ${bars}
         </svg>
         <p class="fx-breakdown-hint">연한 막대 = 환율 변동 효과, 진한 막대 = 실제 위안화 수령액 변화 효과예요. 둘을 더하면 그 달의 실제 원화 변화액과 같아요. 초록은 늘어난 방향, 빨강은 줄어든 방향이에요.</p>
+        <div class="row-scroll">
+          <table class="log-table">
+            <thead><tr><th>기간</th><th class="num">환율 효과</th><th class="num">실수령 효과</th><th class="num">합계(실제 변화)</th></tr></thead>
+            <tbody>${tableRows}</tbody>
+          </table>
+        </div>
+      </div>`;
+  }
+
+  function renderDeductionLoss() {
+    const el = $('deductionLossStats');
+    const groups = {};
+    logRecords.forEach(r => {
+      const month = (r.date || '').slice(0, 7);
+      if (!month) return;
+      (groups[month] = groups[month] || []).push(r);
+    });
+    const months = Object.keys(groups).sort();
+    if (months.length === 0) { el.innerHTML = ''; return; }
+
+    const monthData = months.map(m => {
+      const recs = groups[m];
+      const grossCNY = recs.reduce((s, r) => s + r.gross, 0);
+      const grossKRW = recs.reduce((s, r) => s + r.gross * r.fx, 0);
+      const netKRW = recs.reduce((s, r) => s + r.netKRW, 0);
+      const loss = grossKRW - netKRW;
+      return { month: m, grossCNY, grossKRW, netKRW, loss, lossPct: grossKRW ? (loss / grossKRW) * 100 : 0 };
+    });
+
+    const W = 600, H = 240;
+    const padL = 70, padR = 16, padT = 24, padB = 56;
+    const plotW = W - padL - padR, plotH = H - padT - padB;
+    const maxLoss = Math.max(...monthData.map(m => m.loss), 1) * 1.25;
+    const scale = plotH / maxLoss;
+    const slotW = plotW / monthData.length;
+    const barW = Math.min(44, slotW * 0.5);
+
+    const gridLines = [0, 0.5, 1].map(f => {
+      const y = padT + plotH - f * plotH;
+      const v = f * maxLoss;
+      return `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="var(--border)" stroke-width="1" stroke-dasharray="3,3" />
+        <text x="${padL - 8}" y="${(y + 4).toFixed(1)}" text-anchor="end" font-size="10" font-family="'Noto Sans KR',sans-serif" style="fill:var(--fg-faint)">${Math.round(v).toLocaleString('ko-KR')}</text>`;
+    }).join('');
+
+    const bars = monthData.map((m, i) => {
+      const cx = padL + slotW * (i + 0.5);
+      const h = m.loss * scale;
+      const y = padT + plotH - h;
+      return `
+        <rect x="${(cx - barW / 2).toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${Math.max(h, 1).toFixed(1)}" style="fill:var(--negative); opacity:.75;" />
+        <text x="${cx.toFixed(1)}" y="${(y - 8).toFixed(1)}" text-anchor="middle" font-size="12" font-family="'VT323',monospace" style="fill:var(--negative)">-${Math.round(m.loss).toLocaleString('ko-KR')}</text>
+        <text x="${cx.toFixed(1)}" y="${(padT + plotH + 18).toFixed(1)}" text-anchor="middle" font-size="10.5" font-family="'Noto Sans KR',sans-serif" style="fill:var(--fg-dim)">${m.month}</text>
+        <text x="${cx.toFixed(1)}" y="${(padT + plotH + 34).toFixed(1)}" text-anchor="middle" font-size="10" font-family="'VT323',monospace" style="fill:var(--fg-faint)">-${m.lossPct.toFixed(1)}%</text>
+      `;
+    }).join('');
+
+    const tableRows = monthData.map(m => `
+      <tr>
+        <td>${m.month}</td>
+        <td class="num">${fmt(m.grossCNY)}</td>
+        <td class="num">${fmt(m.grossKRW)}</td>
+        <td class="num">${fmt(m.netKRW)}</td>
+        <td class="num diff-neg">-${fmt(m.loss)}</td>
+        <td class="num diff-neg">-${m.lossPct.toFixed(1)}%</td>
+      </tr>`).join('');
+
+    el.innerHTML = `
+      <div class="quarter-label">월별 계약 환산액 대비 실수령 차이 (원)</div>
+      <div class="quarter-chart-wrap">
+        <svg viewBox="0 0 ${W} ${H}" style="width:100%; height:auto; display:block;">
+          ${gridLines}
+          ${bars}
+        </svg>
+        <p class="fx-breakdown-hint">그 달 세전 계약액(1차+2차)을 그날그날 환율로 환산한 금액에서, 실제로 손에 들어온 원화를 뺀 값이에요 — 사회보험·플랫폼 수수료로 그 달에 원화 기준 얼마나 빠져나갔는지를 보여줘요.</p>
+        <div class="row-scroll">
+          <table class="log-table">
+            <thead><tr><th>월</th><th class="num">계약 세전(위안)</th><th class="num">계약 환산(원)</th><th class="num">실수령(원)</th><th class="num">차이</th><th class="num">비율</th></tr></thead>
+            <tbody>${tableRows}</tbody>
+          </table>
+        </div>
       </div>`;
   }
 
@@ -1181,6 +1276,7 @@
     renderQuarterStats();
     renderSalaryTrend();
     renderFxBreakdown();
+    renderDeductionLoss();
 
     const container = $('logHistory');
     if (logRecords.length === 0) {
