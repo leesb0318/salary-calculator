@@ -110,24 +110,6 @@
     vertical-align: middle;
   }
 
-  .mascot-row { display: flex; align-items: stretch; gap: 10px; margin-bottom: 18px; }
-  .mascot {
-    flex-shrink: 0; width: 54px; height: 54px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 28px; background: var(--surface-2);
-    border: 3px solid var(--ink); border-radius: 3px;
-    box-shadow: 0 4px 0 var(--shadow-strong);
-    animation: idle 1.6s steps(2) infinite;
-  }
-  @keyframes idle { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
-  .bubble {
-    position: relative; background: var(--surface);
-    border: 3px solid var(--ink); border-radius: 3px;
-    padding: 12px 14px; font-size: 13.5px; line-height: 1.6;
-    box-shadow: 0 4px 0 var(--shadow-strong);
-    flex: 1; min-width: 0; display: flex; align-items: center;
-  }
-  #bubbleText strong { color: var(--accent); }
 
   .card {
     background: var(--surface);
@@ -370,7 +352,7 @@
   footer { margin-top: 18px; font-size: 11.5px; color: var(--fg-faint); line-height: 1.7; text-align: center; }
 
   @keyframes pop-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-  .card, .mascot-row { animation: pop-in .35s ease both; }
+  .card { animation: pop-in .35s ease both; }
 
   /* background action strip: ONE continuous horizontal scene spanning the
      full page width, pinned behind the cards (the opaque cards cover the
@@ -449,17 +431,6 @@
     background: #8d99a6; border: 3px solid var(--ink);
   }
 
-  /* original boss sprite — own idle animation, not any specific game's mob */
-  .deco-boss {
-    position: absolute; bottom: 44px; font-size: 48px; line-height: 1;
-    animation: deco-boss-idle 1.3s ease-in-out infinite;
-    filter: drop-shadow(0 4px 0 rgba(0,0,0,.4));
-  }
-  @keyframes deco-boss-idle {
-    0%, 100% { transform: translateY(0) scaleY(1); }
-    50% { transform: translateY(-5px) scaleY(1.06); }
-  }
-
   /* a small patrol flyer for extra motion */
   .deco-ufo { position: absolute; top: 44px; font-size: 24px; animation: deco-ufo-patrol 5s ease-in-out infinite; }
   @keyframes deco-ufo-patrol {
@@ -506,7 +477,6 @@
   <div class="deco-tunnel" style="left:45%;"></div>
   <div class="deco-tunnel" style="left:70%;"></div>
   <span class="deco-fire" style="left:58%;">🔥</span>
-  <span class="deco-boss" style="left:85%;">🐲</span>
   <span class="deco-ufo" style="left:38%;">🛸</span>
 
   <div class="deco-qbox deco-qbox-1" style="left:10%;">?</div>
@@ -549,11 +519,6 @@
     </div>
   </div>
 
-  <div class="mascot-row">
-    <div class="mascot">👾</div>
-    <div class="bubble"><span id="bubbleText">숫자를 넣으면 삐빅! 계산해줄게요.</span></div>
-  </div>
-
   <div class="card settings-card">
     <button type="button" class="settings-toggle" id="grossToggle" aria-expanded="true" aria-controls="grossBody">
       <span>월급</span>
@@ -583,11 +548,11 @@
   </div>
 
   <div class="card settings-card">
-    <button type="button" class="settings-toggle" id="expenseToggle" aria-expanded="true" aria-controls="expenseBody">
+    <button type="button" class="settings-toggle" id="expenseToggle" aria-expanded="false" aria-controls="expenseBody">
       <span>고정비용</span>
-      <span class="chev" id="expenseChev">▴ 접기</span>
+      <span class="chev" id="expenseChev">▾ 펼치기</span>
     </button>
-    <div class="collapse open" id="expenseBody">
+    <div class="collapse" id="expenseBody">
       <div class="collapse-inner">
         <div class="collapse-pad">
           <div id="expenseList"></div>
@@ -913,14 +878,6 @@
 
     $('gaugeFill').style.width = (raiseGross ? pct : 0).toFixed(1) + '%';
     $('gaugePct').textContent = (raiseGross ? pct : 0).toFixed(1) + '%';
-
-    if (raiseGross === 0) {
-      $('bubbleText').innerHTML = '숫자를 넣으면 삐빅! 계산해줄게요.';
-    } else if (raiseNet >= 0) {
-      $('bubbleText').innerHTML = `삐빅! 인상분 중 <strong>${fmtSigned(c(raiseNet))}${unit}</strong>이 진짜 내 손에 들어와요. (반영률 ${pct.toFixed(1)}%)`;
-    } else {
-      $('bubbleText').innerHTML = `경고! 실수령액이 오히려 <strong>${fmtSigned(Math.abs(c(raiseNet)))}${unit}</strong> 줄어들어요.`;
-    }
   }
 
   $('currencyToggle').addEventListener('click', (e) => {
