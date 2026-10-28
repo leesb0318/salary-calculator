@@ -403,28 +403,16 @@
     font-family: "Press Start 2P", monospace; font-size: 16px; color: #2a2100;
     box-shadow: 0 3px 0 var(--shadow-strong);
   }
-  .deco-qcoin { position: absolute; bottom: 194px; font-size: 20px; }
-  .deco-qcoin-1 { animation: deco-qcoin-pop-1 16s linear infinite; }
-  .deco-qcoin-2 { animation: deco-qcoin-pop-2 16s linear infinite; }
-  .deco-qbox-1 { animation: deco-qbox-bump-1 16s linear infinite; }
-  .deco-qbox-2 { animation: deco-qbox-bump-2 16s linear infinite; }
-  @keyframes deco-qbox-bump-1 {
-    0%, 8%, 11%, 100% { transform: translateY(0); }
-    9.3% { transform: translateY(-6px); }
+  .deco-qbox { animation: deco-qbox-bump 16s linear infinite; }
+  .deco-qcoin { position: absolute; bottom: 194px; font-size: 20px; animation: deco-qcoin-pop 16s linear infinite; }
+  @keyframes deco-qbox-bump {
+    0%, 3%, 100% { transform: translateY(0); }
+    1.3% { transform: translateY(-6px); }
   }
-  @keyframes deco-qcoin-pop-1 {
-    0%, 8% { opacity: 0; transform: translateY(14px) scale(.6); }
-    10% { opacity: 1; transform: translateY(-16px) scale(1); }
-    14%, 100% { opacity: 0; transform: translateY(-16px) scale(1); }
-  }
-  @keyframes deco-qbox-bump-2 {
-    0%, 30%, 33%, 100% { transform: translateY(0); }
-    31.3% { transform: translateY(-6px); }
-  }
-  @keyframes deco-qcoin-pop-2 {
-    0%, 30% { opacity: 0; transform: translateY(14px) scale(.6); }
-    32% { opacity: 1; transform: translateY(-16px) scale(1); }
-    36%, 100% { opacity: 0; transform: translateY(-16px) scale(1); }
+  @keyframes deco-qcoin-pop {
+    0% { opacity: 0; transform: translateY(14px) scale(.6); }
+    2% { opacity: 1; transform: translateY(-16px) scale(1); }
+    6%, 100% { opacity: 0; transform: translateY(-16px) scale(1); }
   }
 
   /* original tunnels — a generic pipe silhouette, own palette */
@@ -459,6 +447,23 @@
   }
   @keyframes deco-run { 0% { left: 1%; } 100% { left: 99%; } }
   @keyframes deco-hop { 0%, 100% { margin-bottom: 0; } 50% { margin-bottom: 6px; } }
+
+  /* goal flagpole — rises when the runner reaches the far end, like a level-clear flag */
+  .deco-flag-pole {
+    position: absolute; left: 96%; bottom: 44px; width: 4px; height: 170px;
+    background: var(--ink);
+  }
+  .deco-flag {
+    position: absolute; left: 96%; bottom: 44px; width: 24px; height: 17px;
+    background: var(--accent); clip-path: polygon(0 0, 100% 50%, 0 100%);
+    transform: translateX(2px);
+    animation: deco-flag-rise 16s linear infinite;
+  }
+  @keyframes deco-flag-rise {
+    0%, 91% { bottom: 44px; }
+    95%, 99.3% { bottom: 188px; }
+    100% { bottom: 44px; }
+  }
 </style>
 </head>
 <body>
@@ -477,15 +482,38 @@
   <div class="deco-hill deco-hill-dark" style="left:50%; width:150px;"></div>
   <div class="deco-hill" style="left:80%; width:130px;"></div>
 
-  <div class="deco-tunnel" style="left:45%;"></div>
-  <div class="deco-tunnel" style="left:70%;"></div>
+  <div class="deco-tunnel" style="left:8%;"></div>
+  <div class="deco-tunnel" style="left:25%;"></div>
+  <div class="deco-tunnel" style="left:42%;"></div>
+  <div class="deco-tunnel" style="left:59%;"></div>
+  <div class="deco-tunnel" style="left:76%;"></div>
+  <div class="deco-tunnel" style="left:90%;"></div>
   <span class="deco-fire" style="left:58%;">🔥</span>
   <span class="deco-ufo" style="left:38%;">🛸</span>
 
-  <div class="deco-qbox deco-qbox-1" style="left:10%;">?</div>
-  <span class="deco-qcoin deco-qcoin-1" style="left:10%;">🪙</span>
-  <div class="deco-qbox deco-qbox-2" style="left:32%;">?</div>
-  <span class="deco-qcoin deco-qcoin-2" style="left:32%;">🪙</span>
+  <div class="deco-qbox" style="left:3%; animation-delay:.48s;">?</div>
+  <span class="deco-qcoin" style="left:3%; animation-delay:.48s;">🪙</span>
+  <div class="deco-qbox" style="left:12%; animation-delay:1.92s;">?</div>
+  <span class="deco-qcoin" style="left:12%; animation-delay:1.92s;">🪙</span>
+  <div class="deco-qbox" style="left:21%; animation-delay:3.36s;">?</div>
+  <span class="deco-qcoin" style="left:21%; animation-delay:3.36s;">🪙</span>
+  <div class="deco-qbox" style="left:30%; animation-delay:4.8s;">?</div>
+  <span class="deco-qcoin" style="left:30%; animation-delay:4.8s;">🪙</span>
+  <div class="deco-qbox" style="left:39%; animation-delay:6.24s;">?</div>
+  <span class="deco-qcoin" style="left:39%; animation-delay:6.24s;">🪙</span>
+  <div class="deco-qbox" style="left:48%; animation-delay:7.68s;">?</div>
+  <span class="deco-qcoin" style="left:48%; animation-delay:7.68s;">🪙</span>
+  <div class="deco-qbox" style="left:57%; animation-delay:9.12s;">?</div>
+  <span class="deco-qcoin" style="left:57%; animation-delay:9.12s;">🪙</span>
+  <div class="deco-qbox" style="left:66%; animation-delay:10.56s;">?</div>
+  <span class="deco-qcoin" style="left:66%; animation-delay:10.56s;">🪙</span>
+  <div class="deco-qbox" style="left:75%; animation-delay:12s;">?</div>
+  <span class="deco-qcoin" style="left:75%; animation-delay:12s;">🪙</span>
+  <div class="deco-qbox" style="left:84%; animation-delay:13.44s;">?</div>
+  <span class="deco-qcoin" style="left:84%; animation-delay:13.44s;">🪙</span>
+
+  <div class="deco-flag-pole"></div>
+  <div class="deco-flag"></div>
 
   <span class="deco-runner">👾</span>
 
