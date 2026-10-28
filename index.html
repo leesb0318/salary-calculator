@@ -925,8 +925,8 @@
   $('quickRow').addEventListener('click', (e) => {
     const btn = e.target.closest('button[data-step]');
     if (!btn) return;
-    const base = parseFloat($('grossNow').value) || 0;
-    $('grossAfter').value = base + parseFloat(btn.dataset.step);
+    const current = parseFloat($('grossAfter').value) || 0;
+    $('grossAfter').value = current + parseFloat(btn.dataset.step);
     render();
   });
 
