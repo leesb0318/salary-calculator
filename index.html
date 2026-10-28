@@ -150,6 +150,12 @@
     color: var(--fg-dim); font-size: 11px; font-weight: 700; flex-shrink: 0;
     background: var(--accent-soft); border-radius: 2px; padding: 3px 7px;
   }
+  button.unit.exp-currency {
+    font-family: inherit; border: none; cursor: pointer;
+    transition: background .1s, color .1s;
+  }
+  button.unit.exp-currency:hover { background: var(--accent); color: var(--accent-fg); }
+  button.unit.exp-currency:active { transform: translateY(1px); }
   .num-input:focus-within { border-color: var(--accent); }
   .num-input input[type="date"] { font-family: "Noto Sans KR", sans-serif; font-size: 15px; }
 
@@ -561,7 +567,7 @@
       <span>고정비용 합계</span>
       <span class="value" id="expenseTotalValue"></span>
     </div>
-    <p class="hint">월세, 통신비, 구독료처럼 매달 고정으로 나가는 돈을 넣으면 실수령액에서 자동으로 빼서 보여줘요. 금액은 위안(CNY) 기준으로 입력하세요.</p>
+    <p class="hint">월세, 통신비, 구독료처럼 매달 고정으로 나가는 돈을 넣으면 실수령액에서 자동으로 빼서 보여줘요. 금액 옆 버튼을 눌러 위안/원 단위를 선택할 수 있고, 원으로 입력한 금액은 위쪽 환율로 환산해서 계산돼요.</p>
   </div>
 
   </div>
@@ -774,10 +780,11 @@
   } catch (e) { expenses = null; }
   if (!expenses) {
     expenses = [
-      { id: 1, label: '월세', amount: 0 },
-      { id: 2, label: '통신비', amount: 0 },
+      { id: 1, label: '월세', amount: 0, currency: 'CNY' },
+      { id: 2, label: '통신비', amount: 0, currency: 'CNY' },
     ];
   }
+  expenses.forEach(x => { if (x.currency !== 'KRW') x.currency = 'CNY'; });
   let nextExpenseId = expenses.reduce((max, x) => Math.max(max, x.id || 0), 0) + 1;
 
   function saveExpensesToStorage() {
@@ -790,7 +797,7 @@
         <input type="text" class="exp-label" value="${exp.label}" placeholder="항목명">
         <div class="num-input exp-amount-wrap">
           <input type="number" class="exp-amount" value="${exp.amount}" step="10">
-          <span class="unit">위안</span>
+          <button type="button" class="unit exp-currency">${exp.currency === 'KRW' ? '원' : '위안'}</button>
         </div>
         <button type="button" class="exp-remove" aria-label="삭제">✕</button>
       </div>
@@ -869,7 +876,10 @@
       rows += row('개인소득세', c(now.tax), c(after.tax), { subtle: true, invert: true });
     }
     rows += row('총 실수령액', c(now.totalNet), c(after.totalNet), { total: true });
-    const totalExpenses = expenses.reduce((s, x) => s + (parseFloat(x.amount) || 0), 0);
+    const totalExpenses = expenses.reduce((s, x) => {
+      const amt = parseFloat(x.amount) || 0;
+      return s + (x.currency === 'KRW' ? (v.fx > 0 ? amt / v.fx : 0) : amt);
+    }, 0);
     if (totalExpenses > 0) {
       rows += row('　고정비용', c(totalExpenses), c(totalExpenses), { subtle: true, invert: true });
       rows += row('고정비용 차감 후', c(now.totalNet - totalExpenses), c(after.totalNet - totalExpenses), { total: true });
@@ -1345,13 +1355,25 @@
     render();
   });
   $('expenseList').addEventListener('click', (e) => {
-    const btn = e.target.closest('.exp-remove');
-    if (!btn) return;
-    const r = btn.closest('.expense-row');
-    expenses = expenses.filter(x => x.id !== Number(r.dataset.id));
-    saveExpensesToStorage();
-    renderExpenses();
-    render();
+    const removeBtn = e.target.closest('.exp-remove');
+    if (removeBtn) {
+      const r = removeBtn.closest('.expense-row');
+      expenses = expenses.filter(x => x.id !== Number(r.dataset.id));
+      saveExpensesToStorage();
+      renderExpenses();
+      render();
+      return;
+    }
+    const currBtn = e.target.closest('.exp-currency');
+    if (currBtn) {
+      const r = currBtn.closest('.expense-row');
+      const exp = expenses.find(x => x.id === Number(r.dataset.id));
+      if (!exp) return;
+      exp.currency = exp.currency === 'KRW' ? 'CNY' : 'KRW';
+      saveExpensesToStorage();
+      renderExpenses();
+      render();
+    }
   });
   $('addExpenseBtn').addEventListener('click', () => {
     expenses.push({ id: nextExpenseId++, label: '', amount: 0 });
