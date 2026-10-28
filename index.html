@@ -562,7 +562,7 @@
 
   <div class="card settings-card">
     <button type="button" class="settings-toggle" id="grossToggle" aria-expanded="true" aria-controls="grossBody">
-      <span>월급</span>
+      <span>월급 / 지급 구조 설정</span>
       <span class="chev" id="grossChev">▴ 접기</span>
     </button>
     <div class="collapse open" id="grossBody">
@@ -583,20 +583,8 @@
             </div>
             <div class="quick-row" id="quickRow"></div>
           </div>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <div class="card settings-card">
-    <button type="button" class="settings-toggle" id="settingsToggle" aria-expanded="false" aria-controls="settingsBody">
-      <span>지급 구조 설정</span>
-      <span class="chev" id="settingsChev">▾ 펼치기</span>
-    </button>
-    <div class="collapse" id="settingsBody">
-      <div class="collapse-inner">
-        <div class="collapse-pad">
-          <div class="field-group-row">
+          <div class="field-group-row" style="margin-top: 18px; padding-top: 18px; border-top: 2px dashed var(--border);">
           <div class="field-group">
             <h3 class="subhead"><span>지금 기준</span></h3>
             <div class="grid2">
@@ -677,6 +665,7 @@
 
   <div class="card settings-card">
     <button type="button" class="settings-toggle" id="logToggle" aria-expanded="false" aria-controls="logBody">
+
       <span>지급 기록</span>
       <span class="chev" id="logChev">▾ 펼치기</span>
     </button>
@@ -862,10 +851,10 @@
 
     $('summary').innerHTML = `
       <div class="stat plain"><div class="label">세전 인상액</div><div class="value">${fmtSigned(c(raiseGross))} ${unit}</div></div>
-      <div class="stat pos"><div class="label">✨ 실제로 더 받는 돈</div><div class="value">${fmtSigned(c(raiseNet))} ${unit}</div></div>
-      <div class="stat neg"><div class="label">💨 수수료로 증발한 돈</div><div class="value">${fmtSigned(c(lost))} ${unit}</div></div>
-      <div class="stat acc"><div class="label">📅 연 환산 실수령</div><div class="value">${fmt(c(after.totalNet * 12))} ${unit}</div></div>
-      ${totalExpenses > 0 ? `<div class="stat pos full"><div class="label">💰 고정비용 차감 후 (인상 후 기준)</div><div class="value">${fmt(c(after.totalNet - totalExpenses))} ${unit}</div></div>` : ''}
+      <div class="stat pos"><div class="label">실제로 더 받는 돈</div><div class="value">${fmtSigned(c(raiseNet))} ${unit}</div></div>
+      <div class="stat neg"><div class="label">수수료로 증발한 돈</div><div class="value">${fmtSigned(c(lost))} ${unit}</div></div>
+      <div class="stat acc"><div class="label">연 환산 실수령</div><div class="value">${fmt(c(after.totalNet * 12))} ${unit}</div></div>
+      ${totalExpenses > 0 ? `<div class="stat pos full"><div class="label">고정비용 차감 후 (인상 후 기준)</div><div class="value">${fmt(c(after.totalNet - totalExpenses))} ${unit}</div></div>` : ''}
     `;
 
     $('gaugeFill').style.width = (raiseGross ? pct : 0).toFixed(1) + '%';
@@ -897,7 +886,6 @@
       chev.textContent = open ? '▴ 접기' : '▾ 펼치기';
     });
   }
-  wireCollapse('settingsToggle', 'settingsBody', 'settingsChev');
   wireCollapse('grossToggle', 'grossBody', 'grossChev');
   wireCollapse('logToggle', 'logBody', 'logChev');
 
