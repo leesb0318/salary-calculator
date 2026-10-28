@@ -55,6 +55,11 @@
     mix-blend-mode: multiply;
   }
   .wrap { max-width: 600px; margin: 0 auto; position: relative; }
+  @media (min-width: 980px) {
+    .wrap { max-width: 940px; }
+    .calc-grid { display: grid; grid-template-columns: 1fr 1fr; align-items: start; column-gap: 16px; }
+    .calc-col .card:last-child { margin-bottom: 0; }
+  }
 
   .f-display { font-family: "Black Han Sans", "Noto Sans KR", sans-serif; }
   .f-pixel { font-family: "Press Start 2P", "Black Han Sans", "Noto Sans KR", sans-serif; }
@@ -515,6 +520,9 @@
     </div>
   </div>
 
+  <div class="calc-grid">
+  <div class="calc-col">
+
   <div class="card">
     <h2>환율</h2>
     <div class="field">
@@ -669,6 +677,9 @@
     </div>
   </div>
 
+  </div>
+  <div class="calc-col">
+
   <div class="card">
     <h2>비교표<span class="unit-tag" id="tableUnitTag"></span></h2>
     <div class="row-scroll">
@@ -688,6 +699,9 @@
       <div class="gauge-label"><span>실수령 반영률</span><span id="gaugePct">0%</span></div>
       <div class="gauge"><div class="gauge-fill" id="gaugeFill" style="width:0%"></div></div>
     </div>
+  </div>
+
+  </div>
   </div>
 
   <div class="card">
