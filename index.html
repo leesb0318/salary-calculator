@@ -62,8 +62,9 @@
   .wrap { max-width: 600px; margin: 0 auto; position: relative; }
   @media (min-width: 980px) {
     .wrap { max-width: 940px; }
-    .calc-grid { display: grid; grid-template-columns: 1fr 1fr; align-items: start; column-gap: 16px; }
-    .calc-col .card:last-child { margin-bottom: 0; }
+    .calc-grid { display: grid; grid-template-columns: 1fr 1fr; align-items: stretch; column-gap: 16px; }
+    .calc-col { display: flex; flex-direction: column; }
+    .calc-col .card:last-child { margin-bottom: 0; flex: 1 0 auto; }
   }
 
   .f-display { font-family: "Black Han Sans", "Noto Sans KR", sans-serif; }
