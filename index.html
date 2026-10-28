@@ -325,6 +325,9 @@
     border: 2px solid var(--border); border-radius: 3px; padding: 10px 8px 4px;
     background: var(--surface-2);
   }
+  .fx-breakdown-hint {
+    font-size: 11.5px; color: var(--fg-faint); line-height: 1.6; margin: 8px 0 0;
+  }
   .log-table { width: 100%; border-collapse: collapse; font-size: 12px; }
   .log-table th, .log-table td { padding: 7px 6px; text-align: right; border-bottom: 1px solid var(--border); }
   .log-table th:first-child, .log-table td:first-child { text-align: left; }
@@ -643,6 +646,7 @@
 
     <div id="quarterStats"></div>
     <div id="salaryTrendStats"></div>
+    <div id="fxBreakdownStats"></div>
 
     <div id="logHistory"></div>
 
@@ -1098,6 +1102,75 @@
       + buildTrendChart(points, v => Math.round(v).toLocaleString('ko-KR'), { padL: 70 });
   }
 
+  function renderFxBreakdown() {
+    const el = $('fxBreakdownStats');
+    const groups = {};
+    logRecords.forEach(r => {
+      const month = (r.date || '').slice(0, 7);
+      if (!month) return;
+      (groups[month] = groups[month] || []).push(r);
+    });
+    const months = Object.keys(groups).sort();
+    if (months.length < 2) { el.innerHTML = ''; return; }
+
+    const monthData = months.map(m => {
+      const recs = groups[m];
+      const cny = recs.reduce((s, r) => s + r.netCNY, 0);
+      const krw = recs.reduce((s, r) => s + r.netKRW, 0);
+      return { month: m, cny, krw, fx: cny ? krw / cny : 0 };
+    });
+
+    const transitions = [];
+    for (let i = 1; i < monthData.length; i++) {
+      const prev = monthData[i - 1], curr = monthData[i];
+      const fxEffect = (curr.cny + prev.cny) / 2 * (curr.fx - prev.fx);
+      const amountEffect = (curr.fx + prev.fx) / 2 * (curr.cny - prev.cny);
+      transitions.push({ label: `${prev.month.slice(5)}→${curr.month.slice(5)}`, fxEffect, amountEffect });
+    }
+
+    const W = 600, H = 240;
+    const padL = 64, padR = 16, padT = 20, padB = 46;
+    const plotW = W - padL - padR, plotH = H - padT - padB;
+    const allVals = transitions.flatMap(t => [t.fxEffect, t.amountEffect]);
+    const maxAbs = Math.max(...allVals.map(v => Math.abs(v)), 1) * 1.25;
+    const zeroY = padT + plotH / 2;
+    const scale = (plotH / 2) / maxAbs;
+    const groupW = plotW / transitions.length;
+    const barW = Math.min(28, groupW * 0.28);
+
+    const gridLines = [-0.5, 0, 0.5].map(f => {
+      const y = zeroY - f * (plotH / 2);
+      const v = f * maxAbs;
+      return `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="var(--border)" stroke-width="1" stroke-dasharray="3,3" />
+        <text x="${padL - 8}" y="${(y + 4).toFixed(1)}" text-anchor="end" font-size="10" font-family="'Noto Sans KR',sans-serif" style="fill:var(--fg-faint)">${Math.round(v).toLocaleString('ko-KR')}</text>`;
+    }).join('');
+
+    const bars = transitions.map((t, i) => {
+      const cx = padL + groupW * (i + 0.5);
+      const fxX = cx - barW - 3, amtX = cx + 3;
+      const fxH = Math.abs(t.fxEffect) * scale, amtH = Math.abs(t.amountEffect) * scale;
+      const fxY = t.fxEffect >= 0 ? zeroY - fxH : zeroY;
+      const amtY = t.amountEffect >= 0 ? zeroY - amtH : zeroY;
+      const fxColor = t.fxEffect >= 0 ? 'var(--positive)' : 'var(--negative)';
+      const amtColor = t.amountEffect >= 0 ? 'var(--positive)' : 'var(--negative)';
+      return `
+        <rect x="${fxX.toFixed(1)}" y="${fxY.toFixed(1)}" width="${barW}" height="${Math.max(fxH, 1).toFixed(1)}" style="fill:${fxColor}; opacity:.5;" />
+        <rect x="${amtX.toFixed(1)}" y="${amtY.toFixed(1)}" width="${barW}" height="${Math.max(amtH, 1).toFixed(1)}" style="fill:${amtColor};" />
+        <text x="${cx.toFixed(1)}" y="${H - 26}" text-anchor="middle" font-size="10.5" font-family="'Noto Sans KR',sans-serif" style="fill:var(--fg-dim)">${t.label}</text>
+      `;
+    }).join('');
+
+    el.innerHTML = `
+      <div class="quarter-label">월별 환율 효과 vs 실수령 효과 (원)</div>
+      <div class="quarter-chart-wrap">
+        <svg viewBox="0 0 ${W} ${H}" style="width:100%; height:auto; display:block;">
+          ${gridLines}
+          ${bars}
+        </svg>
+        <p class="fx-breakdown-hint">연한 막대 = 환율 변동 효과, 진한 막대 = 실제 위안화 수령액 변화 효과예요. 둘을 더하면 그 달의 실제 원화 변화액과 같아요. 초록은 늘어난 방향, 빨강은 줄어든 방향이에요.</p>
+      </div>`;
+  }
+
   function renderLog() {
     const nowMonth = new Date().toISOString().slice(0, 7);
     const thisMonthRecs = logRecords.filter(r => (r.date || '').slice(0, 7) === nowMonth);
@@ -1107,6 +1180,7 @@
 
     renderQuarterStats();
     renderSalaryTrend();
+    renderFxBreakdown();
 
     const container = $('logHistory');
     if (logRecords.length === 0) {
