@@ -752,14 +752,16 @@
         </div>
       </div>
     </div>
-    <div class="field">
-      <label for="logFx">그날 환율</label>
-      <div class="num-input">
-        <input id="logFx" class="log-field" type="number" inputmode="decimal" value="190" step="0.1">
-        <span class="unit">원/위안</span>
+    <div class="grid2">
+      <div class="field">
+        <label for="logFx">그날 환율</label>
+        <div class="num-input">
+          <input id="logFx" class="log-field" type="number" inputmode="decimal" value="190" step="0.1">
+          <span class="unit">원/위안</span>
+        </div>
       </div>
+      <div class="log-preview" id="logPreview" style="margin-top: 0;"></div>
     </div>
-    <div class="log-preview" id="logPreview"></div>
     <div class="btn-row-2col">
       <button type="button" class="fetch-btn" id="logFetchFx">실시간 환율 불러오기</button>
       <button type="button" class="fetch-btn danger" id="saveLogBtn">이 기록 저장하기</button>
