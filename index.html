@@ -201,6 +201,8 @@
   .fetch-btn:active { transform: translateY(3px); box-shadow: 0 0 0 var(--shadow-strong); }
   .fetch-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .fetch-btn:disabled { opacity: .6; cursor: default; }
+  .fetch-btn.danger { background: var(--negative); color: #2a0808; }
+  .fetch-btn.danger:focus-visible { outline-color: var(--negative); }
 
   .settings-toggle {
     width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px;
@@ -560,7 +562,7 @@
         <span class="unit">원/위안</span>
       </div>
       <div class="preset-grid" id="fxPresetRow"></div>
-      <button type="button" class="fetch-btn" id="fetchFxBtn">🔄 실시간 환율 불러오기</button>
+      <button type="button" class="fetch-btn" id="fetchFxBtn">실시간 환율 불러오기</button>
       <p class="hint" id="fxStatus">버튼을 누르면 최신 환율을 자동으로 가져와요.</p>
     </div>
   </div>
@@ -760,7 +762,7 @@
     <div class="log-preview" id="logPreview"></div>
     <div class="btn-row-2col">
       <button type="button" class="fetch-btn" id="logFetchFx">실시간 환율 불러오기</button>
-      <button type="button" class="fetch-btn" id="saveLogBtn">이 기록 저장하기</button>
+      <button type="button" class="fetch-btn danger" id="saveLogBtn">이 기록 저장하기</button>
     </div>
 
     <div class="stat acc full" id="currentMonthStat" style="margin-top: 16px;"></div>
@@ -1301,6 +1303,16 @@
 
   document.querySelectorAll('.log-field').forEach(el => el.addEventListener('input', updateLogPreview));
 
+  async function fetchLiveLogFx() {
+    try {
+      const { rate } = await fetchRate();
+      $('logFx').value = rate;
+      updateLogPreview();
+    } catch (err) {
+      // keep the default value; user can still fetch manually or type one in
+    }
+  }
+
   $('logFetchFx').addEventListener('click', async () => {
     const btn = $('logFetchFx');
     btn.disabled = true;
@@ -1406,6 +1418,7 @@
   render();
   fetchLiveRate();
   applyLegDefaults();
+  fetchLiveLogFx();
   renderLog();
 </script>
 
