@@ -309,6 +309,10 @@
     border-radius: 3px; font-size: 13px; color: var(--fg-dim);
   }
   .log-preview strong { color: var(--accent); font-family: "VT323", monospace; font-size: 18px; }
+  .fx-preview-row { align-items: stretch; }
+  .fx-preview-row .field { display: flex; flex-direction: column; }
+  .fx-preview-row .field .num-input { flex: 1; }
+  .fx-preview-row .log-preview { display: flex; flex-direction: column; justify-content: center; }
   .btn-row-2col {
     display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;
   }
@@ -752,7 +756,7 @@
         </div>
       </div>
     </div>
-    <div class="grid2">
+    <div class="grid2 fx-preview-row">
       <div class="field">
         <label for="logFx">그날 환율</label>
         <div class="num-input">
