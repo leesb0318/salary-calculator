@@ -765,7 +765,10 @@
       <button type="button" class="fetch-btn danger" id="saveLogBtn">이 기록 저장하기</button>
     </div>
 
-    <div class="stat acc full" id="currentMonthStat" style="margin-top: 16px;"></div>
+    <div class="summary" style="margin-top: 16px;">
+      <div class="stat acc" id="currentMonthStat"></div>
+      <div class="stat acc" id="totalStat"></div>
+    </div>
 
     <div class="chart-grid-2col">
       <div id="quarterStats"></div>
@@ -1224,6 +1227,10 @@
     const thisMonthCNY = thisMonthRecs.reduce((s, r) => s + r.netCNY, 0);
     const thisMonthKRW = thisMonthRecs.reduce((s, r) => s + r.netKRW, 0);
     $('currentMonthStat').innerHTML = `<div class="label">이번 달(${nowMonth}) 합계 · ${thisMonthRecs.length}건</div><div class="value">${fmt(thisMonthCNY)}위안 · ${fmt(thisMonthKRW)}원</div>`;
+
+    const totalCNY = logRecords.reduce((s, r) => s + r.netCNY, 0);
+    const totalKRW = logRecords.reduce((s, r) => s + r.netKRW, 0);
+    $('totalStat').innerHTML = `<div class="label">총 합계 · ${logRecords.length}건</div><div class="value">${fmt(totalCNY)}위안 · ${fmt(totalKRW)}원</div>`;
 
     renderQuarterStats();
     renderSalaryTrend();
